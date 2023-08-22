@@ -10,3 +10,5 @@ console.log('MongoDB Atlas connected!');
 }).catch(err => {
 console.log(err);
 });
+
+export default client;
