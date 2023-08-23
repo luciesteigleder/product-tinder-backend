@@ -209,17 +209,17 @@ export { User, Shop, Prov, Category, Tag, Result, Conversation };
 //   });
 
 // const newProv = new Prov({
-//     user_id: "64e5cd951054eb8907d0ef16",
-//     prov_location: { coordinates: ["50.84599904406658", "4.3616340030541405"] },
-//     prov_name: "nameProv1",
-//     prov_contact: {
-//       address: "1 rue de Bruxelles",
-//       phone: "0123456789",
-//     },
-//     description: "A nice shop",
-//     picture: "picture/url",
-//     language: "FR",
-//   });
+//   user_id,
+//   prov_location: { coordinates },
+//   prov_name,
+//   prov_contact: {
+//     address,
+//     phone,
+//   },
+//   description,
+//   picture,
+//   language,
+// });
 
 // const newCategory = new Category({
 //     category_name: "Vegetables",
@@ -253,3 +253,16 @@ export { User, Shop, Prov, Category, Tag, Result, Conversation };
 //     .catch((error) => {
 //       console.error("Error updating conversation:", error);
 //     });
+
+// const newProv = new Prov({
+//   user_id: "64e5cd951054eb8907d0ef16",
+//   prov_location: { coordinates: ["50.84599904406658", "4.3616340030541405"] },
+//   prov_name: "nameProv2",
+//   prov_contact: {
+//     address: "1 rue de Bruxelles",
+//     phone: "0123456789",
+//   },
+//   description: "A nice shop",
+//   picture: "picture/url",
+//   language: "FR",
+// });
