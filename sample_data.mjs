@@ -138,3 +138,5 @@ const conversationSchema = new mongoose.Schema({
     },
   ],
 });
+
+export { categorySchema }
