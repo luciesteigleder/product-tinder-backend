@@ -26,8 +26,10 @@ const shopSchema = new mongoose.Schema({
     required: true,
   },
   shop_location: {
-    type: String,
-    required: true,
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
   },
   shop_name: {
     type: String,
@@ -45,7 +47,9 @@ const shopSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  //fav_prov will be added afterwards
+  fav_prov: {
+    type: [mongoose.Schema.Types.ObjectId],
+  },
 });
 
 const provSchema = new mongoose.Schema({
@@ -55,8 +59,10 @@ const provSchema = new mongoose.Schema({
     required: true,
   },
   prov_location: {
-    type: String,
-    required: true,
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
   },
   prov_name: {
     type: String,
@@ -74,7 +80,15 @@ const provSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  //score, pricescore and testimonies will be added afterwards
+  score: {
+    type: [mongoose.Schema.Types.ObjectId],
+  },
+  price_score: {
+    type: [mongoose.Schema.Types.ObjectId],
+  },
+  testimonials: {
+    type: [mongoose.Schema.Types.ObjectId],
+  },
 });
 
 const categorySchema = new mongoose.Schema({
@@ -102,11 +116,13 @@ const resultSchema = new mongoose.Schema({
     ref: "Shop",
     required: true,
   },
-  prov_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Prov",
-    required: true,
-  },
+  prov_id: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Prov",
+      required: true,
+    },
+  ],
 });
 
 const conversationSchema = new mongoose.Schema({
@@ -139,4 +155,101 @@ const conversationSchema = new mongoose.Schema({
   ],
 });
 
-export { categorySchema }
+const User = mongoose.model("User", userSchema);
+
+const Prov = mongoose.model("Prov", provSchema);
+
+const Shop = mongoose.model("Shop", shopSchema);
+
+const Category = mongoose.model("Category", categorySchema);
+
+const Tag = mongoose.model("Tag", tagSchema);
+
+const Result = mongoose.model("Result", resultSchema);
+
+const Conversation = mongoose.model("Conversation", conversationSchema);
+
+// Conversation.findById(conversationId)
+//   .then(conversation => {
+//     conversation.messages.push({
+//       message_author: 'user_id_value',
+//       message_text: 'Hello',
+//       message_date: new Date(),
+//     });
+
+//     return conversation.save();
+//   })
+//   .then(updatedConversation => {
+//     console.log('Updated conversation:', updatedConversation);
+//   })
+//   .catch(error => {
+//     console.error('Error updating conversation:', error);
+//   });
+
+export { User, Shop, Prov, Category, Tag, Result, Conversation };
+
+// const newUser = new User({
+//     username: "username2",
+//     password: "password123",
+//     email: "email@test.com",
+//     profile_type: true,
+//   });
+
+// const newShop = new Shop({
+//     user_id: "64e5cd951054eb8907d0ef16",
+//     shop_location: { coordinates: ["50.84599904406658", "4.3616340030541405"] },
+//     shop_name: "nameShop1",
+//     shop_contact: {
+//       address: "1 rue de Bruxelles",
+//       phone: "0123456789",
+//     },
+//     description: "A nice shop",
+//     picture: "picture/url",
+//     language: "FR",
+//   });
+
+// const newProv = new Prov({
+//     user_id: "64e5cd951054eb8907d0ef16",
+//     prov_location: { coordinates: ["50.84599904406658", "4.3616340030541405"] },
+//     prov_name: "nameProv1",
+//     prov_contact: {
+//       address: "1 rue de Bruxelles",
+//       phone: "0123456789",
+//     },
+//     description: "A nice shop",
+//     picture: "picture/url",
+//     language: "FR",
+//   });
+
+// const newCategory = new Category({
+//     category_name: "Vegetables",
+//     category_description: "everything that is green",
+//     category_logo: "logo/url",
+//   });
+
+// const newTag = new Tag({
+//   tag_name: "carrots",
+// });
+
+// const newResults = new Result({
+//   shop_id: "64e5dcf265667807ecc73bb0",
+//   prov_id: "64e5dcf265667807ecc73bb0",
+// });
+
+//to add a essage to a conversation :
+
+// Conversation.findById("64e5ecf3ce8845889efb0ac0")
+//     .then((conversation) => {
+//       conversation.messages.push({
+//         message_author: "64e5cc5116fba46e46d6e04f",
+//         message_text: "Hello",
+//         message_date: new Date(),
+//       });
+//       return conversation.save();
+//     })
+//     .then((updatedConversation) => {
+//       console.log("Updated conversation:", updatedConversation);
+//     })
+//     .catch((error) => {
+//       console.error("Error updating conversation:", error);
+//     });
