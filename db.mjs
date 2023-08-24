@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
+import { envs } from "./config.mjs";
 
 const client = mongoose
-  .connect(process.env.DB_CONNECT, {
+  .connect(envs.DB_CONNECT, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
