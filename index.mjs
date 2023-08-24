@@ -10,7 +10,6 @@ import testiRouter from "./routes/testiRouter.mjs";
 import priceRouter from "./routes/priceRouter.mjs";
 import favRouter from "./routes/favRouter.mjs";
 import resultRouter from "./routes/resultRouter.mjs";
-import { envs } from "./config.mjs";
 
 import db from "./db.mjs";
 // import {
