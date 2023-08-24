@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 
-import { Prov } from "../sample_data.mjs";
+import { Prov } from "../models/Prov.mjs";
 
 const router = express.Router();
 
@@ -24,6 +24,7 @@ router.post("/", async (req, res) => {
     picture,
     language,
   } = req.body;
+
   const newProv = new Prov(req.body);
   await newProv.save();
   res.send("data saved in the db");
