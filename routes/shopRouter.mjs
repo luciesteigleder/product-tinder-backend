@@ -2,7 +2,7 @@ import express from "express";
 
 import bodyParser from "body-parser";
 
-import { Shop } from "../sample_data.mjs";
+import { Shop } from "../models/Shop.mjs";
 const router = express.Router();
 
 router.use(bodyParser.json());

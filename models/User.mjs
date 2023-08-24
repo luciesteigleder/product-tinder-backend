@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -19,10 +20,13 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre('save', async (next) => {
-    console.log("test middleware");
-    next();
-}) 
+//Middleware to hash password for sign ups
+userSchema.pre("save", async function (next) {
+    const salt = await bcrypt.genSalt();
+    this.password = await bcrypt.hash(this.password, salt)
+    next( )
+});
+
 const User = mongoose.model("User", userSchema);
 
 export { User, userSchema };
