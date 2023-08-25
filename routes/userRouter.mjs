@@ -7,6 +7,22 @@ const router = express.Router();
 
 router.use(bodyParser.json());
 
+//Handling errors and passing them to the front end
+const handleErrors = (err) => {
+  console.log(err.message, err.code);
+  let errors = { email: "", password: "" };
+
+  if (err.message === "wrong email") {
+    //Handling wrong email
+    errors.email = "this email is not registered";
+  }
+  if (err.message === "wrong password") {
+    //Handling wrong password
+    errors.password = "the password doesn't match";
+  }
+  return errors;
+};
+
 //Display user info
 router.get("/", (req, res) => {
   res.send("userRouter ok :)");
@@ -22,13 +38,14 @@ router.delete("/", (req, res) => {
   res.send("delete route ok :)");
 });
 
-//Sign up
-const createToken = (id,type) => {
+//Function to create a token with the user ID and user type as payload
+const createToken = (id, type) => {
   return jwt.sign({ id, type }, process.env.TOKEN_SECRET, {
-    expiresIn: 7200,
+    expiresIn: 7200000,
   });
 };
 
+//Sign up route
 router.post("/signup", async (req, res) => {
   const { username, password, email, profile_type } = req.body;
   try {
@@ -38,20 +55,35 @@ router.post("/signup", async (req, res) => {
       email,
       profile_type,
     });
-    const token = createToken(newUser._id,newUser.profile_type)
-    res.cookie('jwt', token, {
-        httpOnly: true,
-        maxAge: 7200
-    })
-    res.status(201).json({user: newUser._id, type:newUser.profile_type});
+    const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
+    res.cookie("jwt", token, {
+      //pushing the jwt in a httpOnly cookie for frontend handling
+      httpOnly: true,
+      maxAge: 7200000,
+    });
+    res.status(201).json({ user: newUser._id, type: newUser.profile_type });
   } catch (err) {
     res.status(401).json({ err });
   }
 });
 
 //Log in
-router.post("/login", (req, res) => {
-  res.send("login route ok :)");
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    //passing the login statics method (in user model) to verify if email & password match
+    const user = await User.login(email, password);
+    const token = createToken(user._id, user.profile_type)
+    res.cookie("jwt", token, {
+      //pushing the jwt in a httpOnly cookie for frontend handling
+      httpOnly: true,
+      maxAge: 7200000,
+    });
+    res.status(200).json({ user: user._id, type: user.profile_type });
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
+  }
 });
 
 export default router;
