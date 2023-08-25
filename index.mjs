@@ -22,7 +22,7 @@ import db from "./db.mjs";
 //   Conversation,
 // } from "./sample_data.mjs";
 const app = express();
-const PORT = 3050;
+const PORT = process.env.PORT || 3050;
 
 app.use("/static", express.static("public"));
 app.use("/api/categories", catRouter);
