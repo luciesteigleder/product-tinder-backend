@@ -22,7 +22,7 @@ import db from "./db.mjs";
 //   Conversation,
 // } from "./sample_data.mjs";
 const app = express();
-const PORT = 3050;
+//const PORT = 3050;
 
 app.use("/static", express.static("public"));
 app.use("/api/categories", catRouter);
@@ -40,5 +40,5 @@ app.use("/api/result", resultRouter);
 app.post("/test", (req, res) => {});
 
 app.listen(PORT, () => {
-  console.log(`server running at http://localhost:${PORT}`);
+  console.log(`server running at http://localhost:${process.env.PORT}`);
 });
