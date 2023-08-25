@@ -45,6 +45,7 @@ router.post("/", async (req, res) => {
 
 //Modify a new shop profile
 router.put("/", async (req, res) => {
+  // we need the id in the url
   const modificationPossible = [
     "shop_location",
     "shop_name",
