@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { envs } from "./config.mjs";
 import aws from "aws-sdk";
 import dotenv from "dotenv";
 
