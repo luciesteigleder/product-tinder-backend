@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 
-import { Prov } from "../sample_data.mjs";
+import { Prov } from "../models/Prov.mjs";
 
 const router = express.Router();
 
