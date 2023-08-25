@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1444.0",
     "body-parser": "^1.20.2",
     "express": "^4.18.2",
     "lodash": "^4.17.21",
