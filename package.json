@@ -1,7 +1,12 @@
 {
   "name": "product-tinder-backend",
   "version": "1.0.0",
+    "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "description": "Fullstack group project",
+  
   "main": "index.mjs",
   "scripts": {
     "dev": "nodemon index.mjs"
