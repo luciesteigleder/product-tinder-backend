@@ -1,16 +1,15 @@
 import express from "express";
-import bodyParser from "body-parser";
-
 import { Prov } from "../models/Prov.mjs";
 
 const router = express.Router();
 
-router.use(bodyParser.json());
+router.use(express.json());
 
 //get prov info
 router.get("/", async (req, res) => {
   try {
-    const provider = await Prov.findById(req.query.id); // the id in the request has to be the prov_id
+    console.log(req.query);
+    const provider = await Prov.findById(req.query.prov_id);
     if (!provider) {
       return res.status(404).send("Provider not found");
     }
@@ -44,7 +43,6 @@ router.post("/", async (req, res) => {
 
 //Modify a new prov profile
 router.put("/", async (req, res) => {
-  // we need the id in the url
   const modificationPossible = [
     "prov_name",
     "prov_location",
@@ -55,7 +53,7 @@ router.put("/", async (req, res) => {
   ];
   console.log(req.body);
   try {
-    const provider = await Prov.findById(req.query.id);
+    const provider = await Prov.findById(req.query.prov_id);
     console.log(provider);
     modificationPossible.forEach((field) => {
       if (req.body[field]) {
