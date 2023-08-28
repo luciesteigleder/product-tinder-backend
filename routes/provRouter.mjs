@@ -1,5 +1,6 @@
 import express from "express";
 import { Prov } from "../models/Prov.mjs";
+import authChecker from "../middleware/authChecker.mjs";
 
 const router = express.Router();
 
@@ -21,19 +22,20 @@ router.get("/", async (req, res) => {
 });
 
 //Create a new prov profile
-router.post("/", async (req, res) => {
+router.post("/", authChecker, async (req, res) => {
+  const authId = res.locals.payload.id; //check with coach
+  let {
+    user_id,
+    prov_location: { coordinates },
+    prov_name,
+    prov_contact: { address, phone },
+    description,
+    picture,
+    language,
+  } = req.body;
+  req.body.user_id = authId;
   try {
-    const {
-      user_id,
-      prov_location: { coordinates },
-      prov_name,
-      prov_contact: { address, phone },
-      description,
-      picture,
-      language,
-    } = req.body;
-    const newProv = new Prov(req.body);
-    await newProv.save();
+    await Prov.create(req.body);
     res.send("data saved in the db");
   } catch (err) {
     console.error(err.message);
@@ -42,7 +44,8 @@ router.post("/", async (req, res) => {
 });
 
 //Modify a new prov profile
-router.put("/", async (req, res) => {
+router.put("/", authChecker, async (req, res) => {
+  const authId = String(res.locals.payload.id); //Stringifying the user ID in the token payload
   const modificationPossible = [
     "prov_name",
     "prov_location",
@@ -51,19 +54,22 @@ router.put("/", async (req, res) => {
     "picture",
     "language",
   ];
-  console.log(req.body);
   try {
+    //checking db for prov ID
     const provider = await Prov.findById(req.query.prov_id);
-    console.log(provider);
-    modificationPossible.forEach((field) => {
-      if (req.body[field]) {
-        provider[field] = req.body[field];
-      }
-    });
-
-    await provider.save();
-
-    res.send("data modified successfully!");
+    const providerUserId = String(provider.user_id); //Stringifying the user ID in the provider object
+    //matching the IDs from the token with the ID in the provider object
+    if (providerUserId === authId) {
+      modificationPossible.forEach((field) => {
+        if (req.body[field]) {
+          provider[field] = req.body[field];
+        }
+      });
+      await provider.save();
+      res.status(200).send("data modified successfully!");
+    } else {
+      res.status(400).send("You don't have the rights to modify this profile");
+    }
   } catch (err) {
     console.error(err.message);
     res.status(400).send("Server Error");
