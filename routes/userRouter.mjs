@@ -67,16 +67,17 @@ router.post("/signup", async (req, res) => {
       email,
       profile_type,
     });
-    const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
-    res.cookie("jwt", token, {
-      //pushing the jwt in a httpOnly cookie for frontend handling
-      httpOnly: true,
-      maxAge: 7200000,
-    });
+    // const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
+    // res.cookie("jwt", token, {
+    //   //pushing the jwt in a httpOnly cookie for frontend handling
+    //   httpOnly: true,
+    //   maxAge: 7200000,
+    // });
     res.status(201).json({ user: newUser._id, type: newUser.profile_type });
   } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors });
+    // const errors = handleErrors(err);
+    res.send(err)
+    // res.status(400).json({ errors });
   }
 });
 
