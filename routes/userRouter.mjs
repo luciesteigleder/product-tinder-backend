@@ -12,12 +12,24 @@ const handleErrors = (err) => {
   console.log(err.message, err.code);
   let errors = { email: "", password: "" };
 
-  if (err.message === "wrong email") {
-    //Handling wrong email
-    errors.email = "this email is not registered";
+  //Handling validation issues
+  if (err.message.includes("User validation failed")) {
+    Object.values(err.errors).forEach(({ properties }) => {
+      errors[properties.path] = properties.message;
+    });
   }
+
+  //Duplicate email
+  if (err.code === 11000){
+    errors.email = "Email already exists"
+    return errors;
+  }
+
+  //Handling wrong email
+  if (err.message === "wrong email") {
+    errors.email = "this email is not registered";
+  } //Handling wrong password
   if (err.message === "wrong password") {
-    //Handling wrong password
     errors.password = "the password doesn't match";
   }
   return errors;
@@ -63,7 +75,8 @@ router.post("/signup", async (req, res) => {
     });
     res.status(201).json({ user: newUser._id, type: newUser.profile_type });
   } catch (err) {
-    res.status(401).json({ err });
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
   }
 });
 
@@ -73,7 +86,7 @@ router.post("/login", async (req, res) => {
   try {
     //passing the login statics method (in user model) to verify if email & password match
     const user = await User.login(email, password);
-    const token = createToken(user._id, user.profile_type)
+    const token = createToken(user._id, user.profile_type);
     res.cookie("jwt", token, {
       //pushing the jwt in a httpOnly cookie for frontend handling
       httpOnly: true,

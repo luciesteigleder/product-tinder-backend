@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import validator from "validator"
+const { isEmail } = validator
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -10,11 +12,14 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    minlength: [6, "password needs to be at least 6 characters"]
   },
   email: {
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    validate: [isEmail, "email is not valid"]
   },
   profile_type: {
     type: Boolean, //do we really ant boolean ? Yes-no
