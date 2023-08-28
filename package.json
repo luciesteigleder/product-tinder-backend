@@ -1,12 +1,11 @@
 {
   "name": "product-tinder-backend",
   "version": "1.0.0",
-    "engines": {
-    "node": "18.x",
+  "engines": {
+    "node": ">=18.x",
     "npm": "9.x"
   },
   "description": "Fullstack group project",
-  
   "main": "index.mjs",
   "scripts": {
     "dev": "nodemon index.mjs"
@@ -15,14 +14,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "aws-sdk": "^2.1444.0",
+    "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.1",
     "lodash": "^4.17.21",
-    "mongoose": "^7.4.4"
+    "mongoose": "^7.4.4",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
