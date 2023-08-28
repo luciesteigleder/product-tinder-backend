@@ -1,11 +1,11 @@
 import express from "express";
-import bodyParser from "body-parser";
 import jwt from "jsonwebtoken";
 import { User, userSchema } from "../models/User.mjs";
+import authChecker from "../middleware/authChecker.mjs"
 
 const router = express.Router();
 
-router.use(bodyParser.json());
+router.use(express.json());
 
 //Handling errors and passing them to the front end
 const handleErrors = (err) => {
@@ -67,17 +67,18 @@ router.post("/signup", async (req, res) => {
       email,
       profile_type,
     });
-    // const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
+    const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
     // res.cookie("jwt", token, {
     //   //pushing the jwt in a httpOnly cookie for frontend handling
     //   httpOnly: true,
     //   maxAge: 7200000,
     // });
-    res.status(201).json({ user: newUser._id, type: newUser.profile_type });
+    // res.status(201).json({ user: newUser._id, type: newUser.profile_type });
+    res.status(200).json(token);
   } catch (err) {
-    // const errors = handleErrors(err);
+    const errors = handleErrors(err);
     res.send(err)
-    // res.status(400).json({ errors });
+    res.status(400).json({ errors });
   }
 });
 
@@ -87,17 +88,18 @@ router.post("/login", async (req, res) => {
   try {
     //passing the login statics method (in user model) to verify if email & password match
     const user = await User.login(email, password);
-    // const token = createToken(user._id, user.profile_type);
+    const token = createToken(user._id, user.profile_type);
     // res.cookie("jwt", token, {
     //   //pushing the jwt in a httpOnly cookie for frontend handling
     //   httpOnly: true,
     //   maxAge: 7200000,
     // });
-    res.status(200).json({ user: user._id, type: user.profile_type });
+    // res.status(200).json({ user: user._id, type: user.profile_type });
+    res.status(200).json(token);
   } catch (err) {
-    // const errors = handleErrors(err);
+    const errors = handleErrors(err);
     res.send(err)
-    // res.status(400).json({ errors });
+    res.status(400).json({ errors });
   }
 });
 
