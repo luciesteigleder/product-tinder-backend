@@ -86,7 +86,7 @@ router.post("/login", async (req, res) => {
   try {
     //passing the login statics method (in user model) to verify if email & password match
     const user = await User.login(email, password);
-    const token = createToken(user._id, user.profile_type);
+    // const token = createToken(user._id, user.profile_type);
     // res.cookie("jwt", token, {
     //   //pushing the jwt in a httpOnly cookie for frontend handling
     //   httpOnly: true,
@@ -94,8 +94,9 @@ router.post("/login", async (req, res) => {
     // });
     res.status(200).json({ user: user._id, type: user.profile_type });
   } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors });
+    // const errors = handleErrors(err);
+    res.send(err)
+    // res.status(400).json({ errors });
   }
 });
 
