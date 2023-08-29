@@ -95,7 +95,7 @@ router.post("/login", async (req, res) => {
     //   maxAge: 7200000,
     // });
     // res.status(200).json({ user: user._id, type: user.profile_type });
-    res.status(200).json(token);
+    res.status(200).send(token);
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors });
