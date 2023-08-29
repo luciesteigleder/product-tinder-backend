@@ -77,7 +77,6 @@ router.post("/signup", async (req, res) => {
     res.status(200).send(token);
   } catch (err) {
     const errors = handleErrors(err);
-    res.send(err)
     res.status(400).json({ errors });
   }
 });
