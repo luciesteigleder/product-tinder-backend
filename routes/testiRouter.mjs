@@ -6,7 +6,7 @@ const router = express.Router();
 router.use(express.json());
 
 //Get testimonials
-router.get("/", async (req, res) => {
+router.get("/", authChecker, async (req, res) => {
   try {
     const testi = await Testi.findById(req.query.testi_id);
     if (!testi) {
@@ -20,8 +20,10 @@ router.get("/", async (req, res) => {
 });
 
 //Add testimonial
-router.post("/new", async (req, res) => {
+router.post("/new", authChecker, async (req, res) => {
+  const authId = String(res.locals.payload.id);
   let { shop_id, prov_id, testi_text } = req.body;
+  req.body.user_id = authId;
   try {
     const newTesti = await Testi.create(req.body);
     res.json(newTesti);
