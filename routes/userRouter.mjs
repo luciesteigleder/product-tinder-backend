@@ -73,11 +73,9 @@ router.post("/signup", async (req, res) => {
     //   httpOnly: true,
     //   maxAge: 7200000,
     // });
-    // res.status(201).json({ user: newUser._id, type: newUser.profile_type });
     res.status(200).json(token);
   } catch (err) {
     const errors = handleErrors(err);
-    res.send(err)
     res.status(400).json({ errors });
   }
 });
@@ -94,11 +92,9 @@ router.post("/login", async (req, res) => {
     //   httpOnly: true,
     //   maxAge: 7200000,
     // });
-    // res.status(200).json({ user: user._id, type: user.profile_type });
     res.status(200).json(token);
   } catch (err) {
     const errors = handleErrors(err);
-    res.send(err)
     res.status(400).json({ errors });
   }
 });

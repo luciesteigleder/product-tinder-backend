@@ -23,7 +23,8 @@ router.get("/", async (req, res) => {
 
 //Create a new prov profile
 router.post("/", authChecker, async (req, res) => {
-  const authId = res.locals.payload.id; //check with coach
+  console.log(res.locals.payload)
+  const authId = res.locals.payload.id;
   let {
     user_id,
     prov_location: { coordinates },
