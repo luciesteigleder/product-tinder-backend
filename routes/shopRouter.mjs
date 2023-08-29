@@ -8,7 +8,7 @@ router.use(express.json());
 //get shop info
 router.get("/", async (req, res) => {
   try {
-    const shop = await Shop.findById(req.query.id);
+    const shop = await Shop.findById(req.query.shop_id);
     if (!shop) {
       return res.status(404).send("shop not found");
     }
@@ -35,7 +35,7 @@ router.post("/", authChecker, async (req, res) => {
   try {
     console.log(req.body);
 
-    const newShop = await Shop.create(req.body);
+    await Shop.create(req.body);
 
     res.send("Data saved in the db");
   } catch (err) {
@@ -58,7 +58,7 @@ router.put("/", authChecker, async (req, res) => {
 
   try {
     //Checking DB for shop ID
-    const shop = await Shop.findById(req.query.id);
+    const shop = await Shop.findById(req.query.shop_id);
     const shopUserId = String(shop.user_id); //Stringifying the user ID in the shop object
     //matching the IDs from the token with the ID in the shop object
     if (shopUserId === authId) {
