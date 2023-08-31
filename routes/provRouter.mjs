@@ -1,5 +1,6 @@
 import express from "express";
 import { Prov } from "../models/Prov.mjs";
+import { Shop } from "../models/Shop.mjs";
 import authChecker from "../middleware/authChecker.mjs";
 
 const router = express.Router();
@@ -17,7 +18,7 @@ const handleErrors = (err) => {
   return errors;
 };
 
-//get prov info
+//get prov info from id
 router.get("/", async (req, res) => {
   try {
     console.log(req.query);
@@ -32,12 +33,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+//get prov profile from location
+router.get("/loc", async (req, res) => {
+  try {
+    const nearShops = await Shop.geoNear(
+      {
+        type: "Point",
+        coordinates: [parseFloat(req.query.long), parseFloat(req.query.lat)], //the query has to have 2 params: long & lat (this is the location of the prov that is looking for shops nerby)
+      },
+      { maxDistance: 500000 /*this is in meters*/, spherical: true }
+    );
+    if (nearShops.length === 0) {
+      res.sendStatus(404).send("there's no shops around");
+    }
+    res.send(nearShops);
+  } catch (err) {
+    console.error(err.message);
+    res.sendStatus(500).send("Server Error");
+  }
+});
+
 //Create a new prov profile
 router.post("/", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id;
   let {
     user_id,
-    prov_location: { coordinates },
+    geometry: { type, coordinates },
     prov_name,
     prov_contact: { address, phone },
     description,
@@ -45,11 +66,11 @@ router.post("/", authChecker, async (req, res) => {
     language,
   } = req.body;
   req.body.user_id = authId;
-  const profileExists = Prov.exists({ user_id: authId });
+  const profileExists = await Prov.exists({ user_id: authId });
   try {
     if (!profileExists) {
       const newProv = await Prov.create(req.body);
-      res.status.json(newProv);
+      res.status(200).json(newProv);
     } else {
       throw Error("profile exists");
     }
@@ -64,7 +85,7 @@ router.put("/", authChecker, async (req, res) => {
   const authId = String(res.locals.payload.id); //Stringifying the user ID in the token payload
   const modificationPossible = [
     "prov_name",
-    "prov_location",
+    "geometry",
     "prov_contact",
     "description",
     "picture",

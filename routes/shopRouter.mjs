@@ -8,10 +8,10 @@ router.use(express.json());
 //Error Handler
 const handleErrors = (err) => {
   console.log(err.message, err.code);
-  let errors = { error_message:"" };
+  let errors = { error_message: "" };
   //No linked prov or shop profile to a user when logging in
   if (err.message === "profile exists") {
-    errors.error_message= "You are already linked to a profile"
+    errors.error_message = "You are already linked to a profile";
   }
   return errors;
 };
@@ -35,7 +35,7 @@ router.post("/", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id; //check with coach ( create an object to not modify req.body  )
   let {
     user_id,
-    shop_location: { coordinates },
+    geometry: { type, coordinates },
     shop_name,
     shop_contact: { address, phone },
     description,
@@ -45,16 +45,15 @@ router.post("/", authChecker, async (req, res) => {
   req.body.user_id = authId;
   const profileExists = Shop.exists({ user_id: authId });
   try {
-    if (!profileExists){
-    const newShop = await Shop.create(req.body);
-    res.status(200).json(newShop)
-    }
-    else{
-      throw Error('profile exists')
+    if (!profileExists) {
+      const newShop = await Shop.create(req.body);
+      res.status(200).json(newShop);
+    } else {
+      throw Error("profile exists");
     }
   } catch (err) {
     const errors = handleErrors(err);
-    res.status(400).json({ errors })
+    res.status(400).json({ errors });
   }
 });
 
@@ -62,7 +61,7 @@ router.post("/", authChecker, async (req, res) => {
 router.put("/", authChecker, async (req, res) => {
   const authId = String(res.locals.payload.id); //Stringifying the user ID in the token payload
   const modificationPossible = [
-    "shop_location",
+    "geometry",
     "shop_name",
     "shop_contact",
     "description",
