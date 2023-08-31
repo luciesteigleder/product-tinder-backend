@@ -6,6 +6,17 @@ const router = express.Router();
 
 router.use(express.json());
 
+//Error Handler
+const handleErrors = (err) => {
+  console.log(err.message, err.code);
+  let errors = { error_message: "" };
+  //No linked prov or shop profile to a user when logging in
+  if (err.message === "profile exists") {
+    errors.error_message = "You are already linked to a profile";
+  }
+  return errors;
+};
+
 //get prov info
 router.get("/", async (req, res) => {
   try {
@@ -23,8 +34,7 @@ router.get("/", async (req, res) => {
 
 //Create a new prov profile
 router.post("/", authChecker, async (req, res) => {
-  console.log(res.locals.payload);
-  const authId = res.locals.payload.id;
+  const authId = res.locals.payload.user_id;
   let {
     user_id,
     prov_location: { coordinates },
@@ -35,12 +45,17 @@ router.post("/", authChecker, async (req, res) => {
     language,
   } = req.body;
   req.body.user_id = authId;
+  const profileExists = Prov.exists({ user_id: authId });
   try {
-    await Prov.create(req.body);
-    res.send("data saved in the db");
+    if (!profileExists) {
+      const newProv = await Prov.create(req.body);
+      res.status.json(newProv);
+    } else {
+      throw Error("profile exists");
+    }
   } catch (err) {
-    console.error(err.message);
-    res.send(400).send("Server Error");
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
   }
 });
 
