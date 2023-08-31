@@ -10,6 +10,7 @@ import testiRouter from "./routes/testiRouter.mjs";
 import priceRouter from "./routes/priceRouter.mjs";
 import favRouter from "./routes/favRouter.mjs";
 import resultRouter from "./routes/resultRouter.mjs";
+import tagRouter from "./routes/tagRouter.mjs";
 
 import db from "./db.mjs";
 // import {
@@ -35,6 +36,7 @@ app.use("/api/testi", testiRouter);
 app.use("/api/price", priceRouter);
 app.use("/api/fav", favRouter);
 app.use("/api/result", resultRouter);
+app.use("/api/tag", tagRouter);
 
 // TESTING DB push to collection
 app.post("/test", (req, res) => {});

@@ -92,4 +92,9 @@ router.put("/", authChecker, async (req, res) => {
   }
 });
 
+//get results from a search
+router.get("/search", (req, res) => {
+  res.send("search route ok");
+});
+
 export default router;
