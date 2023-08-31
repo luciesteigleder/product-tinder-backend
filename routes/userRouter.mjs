@@ -76,7 +76,7 @@ router.post("/signup", async (req, res) => {
       email,
       profile_type,
     });
-    const token = createToken(newUser._id, newUser.profile_type); //Create a token with ID and Profile type
+    const token = createToken(newUser._id, newUser.shop_id, newUser.prov_id); //Create a token with ID
     // res.cookie("jwt", token, {
     //   //pushing the jwt in a httpOnly cookie for frontend handling
     //   httpOnly: true,
@@ -112,7 +112,7 @@ router.post("/login", async (req, res) => {
       token = createToken(userId, null, provId);
     }
     else{
-      token = createToken(userId);
+      token = createToken(userId, null, null);
       // throw Error('No shop or prov profile')
     }
 
