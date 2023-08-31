@@ -1,5 +1,6 @@
 import express from "express";
 import axios from "axios";
+import cheerio from "cheerio";
 import { Prov } from "../models/Prov.mjs";
 import { Shop } from "../models/Shop.mjs";
 import dotenv from "dotenv";

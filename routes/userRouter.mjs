@@ -1,8 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/User.mjs";
+import { User, userSchema } from "../models/User.mjs";
 import { Shop } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
+import authChecker from "../middleware/authChecker.mjs";
 
 const router = express.Router();
 
@@ -97,10 +98,16 @@ router.post("/login", async (req, res) => {
     const userId = user._id;
     const shop = await Shop.find({ user_id: userId });
     const prov = await Prov.find({ user_id: userId });
+    console.log(userId)
+    console.log(shop)
+    console.log(prov)
     let token = null;
 
     const shopExist = await Shop.exists({ user_id: userId });
     const provExist = await Prov.exists({ user_id: userId });
+
+    console.log(shopExist)
+    console.log(provExist)
 
     if (shopExist) {
       const shopId = shop[0].id;
