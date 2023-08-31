@@ -1,7 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { User, userSchema } from "../models/User.mjs";
-import authChecker from "../middleware/authChecker.mjs"
+import { Shop } from "../models/Shop.mjs";
+import { Prov } from "../models/Prov.mjs";
+import authChecker from "../middleware/authChecker.mjs";
 
 const router = express.Router();
 
@@ -10,7 +12,7 @@ router.use(express.json());
 //Handling errors and passing them to the front end
 const handleErrors = (err) => {
   console.log(err.message, err.code);
-  let errors = { email: "", password: "" };
+  let errors = { email: "", password: "", other:"" };
 
   //Handling validation issues
   if (err.message.includes("User validation failed")) {
@@ -20,8 +22,8 @@ const handleErrors = (err) => {
   }
 
   //Duplicate email
-  if (err.code === 11000){
-    errors.email = "Email already exists"
+  if (err.code === 11000) {
+    errors.email = "Email already exists";
     return errors;
   }
 
@@ -32,7 +34,14 @@ const handleErrors = (err) => {
   if (err.message === "wrong password") {
     errors.password = "the password doesn't match";
   }
+
+  //No linked prov or shop profile to a user when logging in
+  if (err.message === "No shop or prov profile") {
+    errors.other= "There is no shop or provider profile linked to this user"
+  }
+
   return errors;
+
 };
 
 //Display user info
@@ -51,8 +60,8 @@ router.delete("/", (req, res) => {
 });
 
 //Function to create a token with the user ID and user type as payload
-const createToken = (id, type) => {
-  return jwt.sign({ id, type }, process.env.TOKEN_SECRET, {
+const createToken = (user_id = null, shop_id = null, prov_id = null) => {
+  return jwt.sign({ user_id, shop_id, prov_id }, process.env.TOKEN_SECRET, {
     expiresIn: 7200000,
   });
 };
@@ -86,7 +95,27 @@ router.post("/login", async (req, res) => {
   try {
     //passing the login statics method (in user model) to verify if email & password match
     const user = await User.login(email, password);
-    const token = createToken(user._id, user.profile_type);
+    const userId = user._id;
+    const shop = await Shop.find({ user_id: userId });
+    const prov = await Prov.find({ user_id: userId });
+    let token = null;
+
+    const shopExist = await Shop.exists({ user_id: userId });
+    const provExist = await Prov.exists({ user_id: userId });
+
+    if (shopExist) {
+      const shopId = shop[0].id;
+      token = createToken(userId, shopId, null);
+    }
+    if (provExist) {
+      const provId = prov[0].id;
+      token = createToken(userId, null, provId);
+    }
+    else{
+      token = createToken(userId);
+      // throw Error('No shop or prov profile')
+    }
+
     // res.cookie("jwt", token, {
     //   //pushing the jwt in a httpOnly cookie for frontend handling
     //   httpOnly: true,
