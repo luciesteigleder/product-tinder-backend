@@ -1,12 +1,17 @@
 import express from "express";
 import { Conversation, conversationSchema } from "../models/Conversation.mjs";
+import authChecker from "../middleware/authChecker.mjs"
 
 const router = express.Router();
 router.use(express.json());
 
 //CONVERSATIONS
 // View conversation
-router.get("/", async (req, res) => {
+router.get("/", authChecker, async (req, res) => {
+  const authId = res.locals.payload.prov_id || res.locals.payload.shop_id;
+  console.log(res.locals.payload.prov_id)
+  console.log(res.locals.payload.shop_id)
+  console.log(`final result: ${authId}`)
   const conversation_id = req.query.conversation_id;
   try {
     const getConversation = await Conversation.findById(conversation_id);
@@ -18,16 +23,16 @@ router.get("/", async (req, res) => {
 });
 
 //Creates a new conversation
-router.post("/new", async (req, res) => {
-  console.log(req.body);
-  console.log(req.body.messages);
+router.post("/new",authChecker, async (req, res) => {
+  const authId = res.locals.payload.shop_id
+  const messAuthor = res.locals.payload.user_id
   try {
     const newConversation = await Conversation.create({
-      shop_id: req.body.shop_id,
+      shop_id: authId,
       prov_id: req.body.prov_id,
       messages: [
         {
-          message_author: req.body.messages[0].message_author,
+          message_author: messAuthor,
           message_text: req.body.messages[0].message_text,
         },
       ],
