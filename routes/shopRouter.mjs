@@ -1,6 +1,8 @@
 import express from "express";
 import { Shop } from "../models/Shop.mjs";
 import authChecker from "../middleware/authChecker.mjs";
+import mg from "mongoose";
+import authToken from "../middleware/authChecker.mjs";
 const router = express.Router();
 
 router.use(express.json());
@@ -32,7 +34,8 @@ router.get("/", async (req, res) => {
 
 //Create a new shop profile
 router.post("/", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id; //check with coach ( create an object to not modify req.body  )
+  let authId = res.locals.payload.user_id; //check with coach ( create an object to not modify req.body  )
+  console.log(authId)
   let {
     user_id,
     shop_location: { coordinates },
@@ -43,7 +46,11 @@ router.post("/", authChecker, async (req, res) => {
     language,
   } = req.body;
   req.body.user_id = authId;
-  const profileExists = Shop.exists({ user_id: authId });
+  console.log(authId)
+  // console.log(req.body)
+  // console.log(req.body.user_id)
+  const profileExists = await Shop.exists({ user_id: authId });
+  console.log(profileExists)
   try {
     if (!profileExists){
     const newShop = await Shop.create(req.body);
@@ -68,8 +75,7 @@ router.put("/", authChecker, async (req, res) => {
     "description",
     "picture",
     "language",
-  ];
-
+  ]
   try {
     //Checking DB for shop ID
     const shop = await Shop.findById(req.query.shop_id);

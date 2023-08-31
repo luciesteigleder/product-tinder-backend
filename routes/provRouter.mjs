@@ -45,11 +45,11 @@ router.post("/", authChecker, async (req, res) => {
     language,
   } = req.body;
   req.body.user_id = authId;
-  const profileExists = Prov.exists({ user_id: authId });
+  const profileExists = await Prov.exists({ user_id: authId });
   try {
     if (!profileExists) {
       const newProv = await Prov.create(req.body);
-      res.status.json(newProv);
+      res.status(200).json(newProv);
     } else {
       throw Error("profile exists");
     }
