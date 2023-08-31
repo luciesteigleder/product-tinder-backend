@@ -112,10 +112,12 @@ router.post("/login", async (req, res) => {
     if (shopExist) {
       const shopId = shop[0].id;
       token = createToken(userId, shopId, null);
+      console.log(shopId)
     }
-    if (provExist) {
+    else if (provExist) {
       const provId = prov[0].id;
       token = createToken(userId, null, provId);
+      console.log(provId)
     }
     else{
       token = createToken(userId, null, null);

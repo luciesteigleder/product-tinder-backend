@@ -3,7 +3,6 @@ import axios from "axios";
 import { Shop } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
 import authChecker from "../middleware/authChecker.mjs";
-import mg from "mongoose";
 import authToken from "../middleware/authChecker.mjs";
 const router = express.Router();
 
