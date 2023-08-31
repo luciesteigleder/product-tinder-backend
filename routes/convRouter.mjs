@@ -1,6 +1,6 @@
 import express from "express";
 import { Conversation, conversationSchema } from "../models/Conversation.mjs";
-import authChecker from "../middleware/authChecker.mjs";
+import authChecker from "../middleware/authChecker.mjs"
 
 const router = express.Router();
 router.use(express.json());
@@ -9,19 +9,13 @@ router.use(express.json());
 // View conversation
 router.get("/", authChecker, async (req, res) => {
   const authId = res.locals.payload.prov_id || res.locals.payload.shop_id;
+  console.log(res.locals.payload.prov_id)
+  console.log(res.locals.payload.shop_id)
+  console.log(`final result: ${authId}`)
   const conversation_id = req.query.conversation_id;
-
   try {
     const getConversation = await Conversation.findById(conversation_id);
-
-    if (
-      authId === String(getConversation.shop_id) ||
-      authId === String(getConversation.prov_id)
-    ) {
-      res.json(getConversation);
-    } else {
-      res.send("You don't have access to this conversation");
-    }
+    res.json(getConversation);
   } catch (err) {
     console.log(err);
     res.status(400).json({ message: err.message });
@@ -29,9 +23,9 @@ router.get("/", authChecker, async (req, res) => {
 });
 
 //Creates a new conversation
-router.post("/new", authChecker, async (req, res) => {
-  const authId = res.locals.payload.shop_id;
-  const messAuthor = res.locals.payload.user_id;
+router.post("/new",authChecker, async (req, res) => {
+  const authId = res.locals.payload.shop_id
+  const messAuthor = res.locals.payload.user_id
   try {
     const newConversation = await Conversation.create({
       shop_id: authId,
@@ -51,25 +45,13 @@ router.post("/new", authChecker, async (req, res) => {
 });
 
 //Delete conversation
-router.delete("/", authChecker, async (req, res) => {
-  const { prov_id: authProvId, shop_id: authShopId } = res.locals.payload;
+router.delete("/", async (req, res) => {
   try {
     const conversation_id = req.query.conversation_id;
-    const { prov_id: convProvId, shop_id: convShopId } =
-      await Conversation.findById(conversation_id);
-    console.log("convProvId: " + String(convProvId));
-    console.log("convShopId: " + String(convShopId));
-    if (convProvId == authProvId || convShopId == authShopId) {
-
-      const deletedConversation = await Conversation.deleteOne({
-        _id: conversation_id,
-      });
-      res.status(204).json(deletedConversation);
-    } else {
-      res
-        .status(400)
-        .send("You don't have the rights to delete this conversation");
-    }
+    const deletedConversation = await Conversation.deleteOne({
+      _id: conversation_id,
+    });
+    res.json(deletedConversation);
   } catch (err) {
     console.log(err);
     res.status(400).json({ message: err.message });
