@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema({
     validate: [isEmail, "email is not valid"]
   },
   profile_type: {
-    type: Boolean, //do we really ant boolean ? Yes-no
-    required: true,
+    type: String, //do we really any boolean ? Yes-no
+    required: true
   },
 });
 
