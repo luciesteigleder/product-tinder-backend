@@ -1,5 +1,7 @@
 import express from "express";
+import axios from "axios";
 import { Shop } from "../models/Shop.mjs";
+import { Prov } from "../models/Prov.mjs";
 import authChecker from "../middleware/authChecker.mjs";
 import mg from "mongoose";
 import authToken from "../middleware/authChecker.mjs";
@@ -32,25 +34,62 @@ router.get("/", async (req, res) => {
   }
 });
 
+//get prov profile from location
+router.get("/loc", async (req, res) => {
+  try {
+    const nearProvs = await Prov.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [
+              parseFloat(req.query.long),
+              parseFloat(req.query.lat),
+            ],
+          },
+          distanceField: "distance",
+          maxDistance: 500000,
+          spherical: true,
+        },
+      },
+    ]);
+    if (nearProvs.length === 0) {
+      res.status(404).send("there's no provs around");
+    }
+    res.send(nearProvs);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 //Create a new shop profile
 router.post("/", authChecker, async (req, res) => {
   let authId = res.locals.payload.user_id; //check with coach ( create an object to not modify req.body  )
-  console.log(authId)
+  console.log(authId);
   let {
     user_id,
-    geometry: { type, coordinates },
+    geometry,
     shop_name,
     shop_contact: { address, phone },
     description,
     picture,
     language,
   } = req.body;
+
+  //authentification
   req.body.user_id = authId;
-  console.log(authId)
-  // console.log(req.body)
-  // console.log(req.body.user_id)
   const profileExists = await Shop.exists({ user_id: authId });
-  console.log(profileExists)
+
+  //get coordinates from address
+  const newAddress = req.body.shop_contact.address;
+  const geocodify = await axios.get(
+    `https://api.geocodify.com/v2/geocode?api_key=${process.env.GEO_KEY}&q=${address}`
+  );
+  const html = geocodify.data;
+  const coordinates = html.response.features[0].geometry;
+  req.body.geometry = coordinates;
+
   try {
     if (!profileExists) {
       const newShop = await Shop.create(req.body);
@@ -74,7 +113,7 @@ router.put("/", authChecker, async (req, res) => {
     "description",
     "picture",
     "language",
-  ]
+  ];
   try {
     //Checking DB for shop ID
     const shop = await Shop.findById(req.query.shop_id);
