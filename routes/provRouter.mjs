@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
 
 //Create a new prov profile
 router.post("/", authChecker, async (req, res) => {
-  console.log(res.locals.payload)
+  console.log(res.locals.payload);
   const authId = res.locals.payload.id;
   let {
     user_id,
