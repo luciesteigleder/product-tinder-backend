@@ -12,16 +12,6 @@ import favRouter from "./routes/favRouter.mjs";
 import resultRouter from "./routes/resultRouter.mjs";
 import tagRouter from "./routes/tagRouter.mjs";
 
-import db from "./db.mjs";
-// import {
-//   User,
-//   Shop,
-//   Prov,
-//   Category,
-//   Tag,
-//   Result,
-//   Conversation,
-// } from "./sample_data.mjs";
 const app = express();
 const PORT = process.env.PORT || 3050;
 
