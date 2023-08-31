@@ -1,7 +1,6 @@
 import express from "express";
 import { Shop } from "../models/Shop.mjs";
 import authChecker from "../middleware/authChecker.mjs";
-import mg from "mongoose";
 import authToken from "../middleware/authChecker.mjs";
 const router = express.Router();
 

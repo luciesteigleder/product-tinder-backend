@@ -98,18 +98,26 @@ router.post("/login", async (req, res) => {
     const userId = user._id;
     const shop = await Shop.find({ user_id: userId });
     const prov = await Prov.find({ user_id: userId });
+    console.log(userId)
+    console.log(shop)
+    console.log(prov)
     let token = null;
 
     const shopExist = await Shop.exists({ user_id: userId });
     const provExist = await Prov.exists({ user_id: userId });
 
+    console.log(shopExist)
+    console.log(provExist)
+
     if (shopExist) {
       const shopId = shop[0].id;
       token = createToken(userId, shopId, null);
+      console.log(shopId)
     }
-    if (provExist) {
+    else if (provExist) {
       const provId = prov[0].id;
       token = createToken(userId, null, provId);
+      console.log(provId)
     }
     else{
       token = createToken(userId, null, null);
