@@ -1,17 +1,26 @@
 import mongoose from "mongoose";
 
+//shopGeoSchema
+const shopGeoSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    default: "Point",
+    required: true,
+  },
+  coordinates: {
+    type: [Number],
+    index: "2dsphere",
+    required: true,
+  },
+});
+
 const shopSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
-  shop_location: {
-    coordinates: {
-      type: [Number],
-      required: true,
-    },
-  },
+  geometry: shopGeoSchema,
   shop_name: {
     type: String,
     required: true,

@@ -1,17 +1,26 @@
 import mongoose from "mongoose";
 
+//proGeoSchema
+const provGeoSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    default: "Point",
+    required: true,
+  },
+  coordinates: {
+    type: [Number],
+    index: "2dsphere",
+    required: true,
+  },
+});
+
 const provSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
-  prov_location: {
-    coordinates: {
-      type: [Number],
-      required: true,
-    },
-  },
+  geometry: provGeoSchema,
   prov_name: {
     type: String,
     required: true,
@@ -39,6 +48,6 @@ const provSchema = new mongoose.Schema({
   },
 });
 
-  const Prov = mongoose.model("Prov", provSchema);
+const Prov = mongoose.model("Prov", provSchema);
 
-  export {Prov, provSchema}
+export { Prov, provSchema };
