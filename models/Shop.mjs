@@ -14,6 +14,26 @@ const shopGeoSchema = new mongoose.Schema({
   },
 });
 
+//shopResultsSchema
+const shopResultsSchema = new mongoose.Schema({
+  prov_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Prov",
+    required: true,
+  },
+  distance: {
+    type: Number,
+  },
+});
+
+//shopSearchSchema
+const shopSearchSchema = new mongoose.Schema({
+  criteria: {
+    type: Object,
+  },
+  results: shopResultsSchema,
+});
+
 const shopSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
