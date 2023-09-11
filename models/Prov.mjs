@@ -46,6 +46,15 @@ const provSchema = new mongoose.Schema({
   testimonials: {
     type: [mongoose.Schema.Types.ObjectId],
   },
+  tags: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Tag",
+  },
+  categories: {
+    // check whether we want plurial or singular
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Category",
+  },
 });
 
 const Prov = mongoose.model("Prov", provSchema);

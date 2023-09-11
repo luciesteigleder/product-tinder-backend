@@ -19,7 +19,7 @@ const getStem = async (string) => {
   return string;
 };
 
-//get tags  by id
+//get tags by id
 router.get("/", async (req, res) => {
   try {
     const tag = await Tag.findById(req.query.tag_id);
@@ -37,14 +37,17 @@ router.get("/", async (req, res) => {
 router.get("/tag", async (req, res) => {
   let searchStem = req.query.tag_stem;
   try {
-    const tag = await Tag.find({
+    const exactTag = await Tag.find({
       tag_stem: searchStem,
       prov_id: { $ne: null },
     });
-    if (tag.length === 0) {
+    const partialTag = await Tag.find({
+      tag_stem: { $regex: searchStem, $options: "i" },
+    });
+    if (exactTag.length === 0 && partialTag.length === 0) {
       return res.status(404).send("tag not found");
     }
-    res.json(tag);
+    res.json(exactTag + partialTag);
   } catch (err) {
     console.error(err.message);
     res.sendStatus(500).send("Server Error");
@@ -68,26 +71,35 @@ router.post("/new", async (req, res) => {
   }
   const tagTag_stem = newlyCreatedTag.tag_stem;
 
-  //check if the tag_stem already exists for this user (depending whether it's a shop or a prov)
+  //check if the user doesn't have more than 20 tags already
   try {
-    let existingTag;
-    if (tagProv_id) {
-      existingTag = await Tag.findOne({
-        prov_id: tagProv_id,
-        tag_stem: tagTag_stem,
-      });
-    } else if (tagShop_id) {
-      existingTag = await Tag.findOne({
-        shop_id: tagShop_id,
-        tag_stem: tagTag_stem,
-      });
-    }
+    let userTags;
+    if (tagShop_id) {
+      userTags = await find({ prov_id: tagProv_id });
+      if (userTags.length >= 20) {
+        res.status(500).send("User reached the limit of tags");
+      } else {
+        //check if the tag_stem already exists for this user (depending whether it's a shop or a prov)
+        let existingTag;
+        if (tagProv_id) {
+          existingTag = await Tag.findOne({
+            prov_id: tagProv_id,
+            tag_stem: tagTag_stem,
+          });
+        } else if (tagShop_id) {
+          existingTag = await Tag.findOne({
+            shop_id: tagShop_id,
+            tag_stem: tagTag_stem,
+          });
+        }
 
-    if (existingTag) {
-      return res.status(400).send("this user already has a similar tag");
-    } else {
-      const newTag = await Tag.create(newlyCreatedTag);
-      res.json(newTag);
+        if (existingTag) {
+          return res.status(400).send("this user already has a similar tag");
+        } else {
+          const newTag = await Tag.create(newlyCreatedTag);
+          res.json(newTag);
+        }
+      }
     }
   } catch (err) {
     console.error(err.message);
