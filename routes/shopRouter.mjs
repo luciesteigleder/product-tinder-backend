@@ -104,7 +104,7 @@ router.post("/", authChecker, async (req, res) => {
 
 //Modify a new shop profile
 router.put("/", authChecker, async (req, res) => {
-  const authId = String(res.locals.payload.id); //Stringifying the user ID in the token payload
+  const authId = res.locals.payload.user_id;
   const modificationPossible = [
     "geometry",
     "shop_name",
@@ -116,9 +116,9 @@ router.put("/", authChecker, async (req, res) => {
   try {
     //Checking DB for shop ID
     const shop = await Shop.findById(req.query.shop_id);
-    const shopUserId = String(shop.user_id); //Stringifying the user ID in the shop object
+    const shopUserId = shop.user_id;
     //matching the IDs from the token with the ID in the shop object
-    if (shopUserId === authId) {
+    if (shopUserId == authId) {
       modificationPossible.forEach((field) => {
         if (req.body[field]) {
           shop[field] = req.body[field];
