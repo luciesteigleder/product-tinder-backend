@@ -59,7 +59,7 @@ router.put("/", async (req, res) => {
   }
 });
 
-//Delete scrore
+//Delete price
 router.delete("/", async (req, res) => {
   try {
     const priceToDelete = await Price.findOneAndDelete({

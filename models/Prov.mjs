@@ -1,6 +1,25 @@
 import mongoose from "mongoose";
+import axios from "axios";
 
-//proGeoSchema
+//Function to get the coordinates from address
+const getCoordinates = async (address) => {
+  try {
+    if (!address) {
+      throw new Error("Address is missing");
+    }
+    const geocodify = await axios.get(
+      `https://api.geocodify.com/v2/geocode?api_key=${process.env.GEO_KEY}&q=${address}`
+    );
+    const html = geocodify.data;
+    const coordinates = html.response.features[0].geometry;
+    return coordinates;
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
+
+//provGeoSchema
 const provGeoSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -11,6 +30,26 @@ const provGeoSchema = new mongoose.Schema({
     type: [Number],
     index: "2dsphere",
     required: true,
+  },
+});
+
+//provTagSchema
+const provTagSchema = new mongoose.Schema({
+  tag_name: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (value) {
+        return /^[a-zA-Z\s_-]+$/.test(value);
+      },
+      message: "Tag name must contain only letters.",
+    },
+  },
+  tag_stem: {
+    type: String,
+    set: function (value) {
+      return String(value.tag_stem); //required: true,
+    },
   },
 });
 
@@ -25,7 +64,14 @@ const provSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  prov_contact: { address: String, phone: Number },
+  prov_address: {
+    type: String,
+    required: true,
+  },
+  prov_phone: {
+    type: Number,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
@@ -46,10 +92,7 @@ const provSchema = new mongoose.Schema({
   testimonials: {
     type: [mongoose.Schema.Types.ObjectId],
   },
-  tags: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "Tag",
-  },
+  tags: [provTagSchema],
   categories: {
     // check whether we want plurial or singular
     type: [mongoose.Schema.Types.ObjectId],
@@ -59,4 +102,4 @@ const provSchema = new mongoose.Schema({
 
 const Prov = mongoose.model("Prov", provSchema);
 
-export { Prov, provSchema };
+export { Prov, provSchema, getCoordinates };

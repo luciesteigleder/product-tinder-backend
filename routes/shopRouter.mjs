@@ -1,10 +1,12 @@
 import express from "express";
 import axios from "axios";
-import { Shop } from "../models/Shop.mjs";
+import { Shop, getCoordinates } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
 import authChecker from "../middleware/authChecker.mjs";
 import authToken from "../middleware/authChecker.mjs";
 const router = express.Router();
+
+//get it to change the coordinates when they change the address
 
 router.use(express.json());
 
@@ -68,12 +70,13 @@ router.post("/", authChecker, async (req, res) => {
   console.log(authId);
   let {
     user_id,
-    geometry,
     shop_name,
-    shop_contact: { address, phone },
+    shop_address,
+    shop_phone,
     description,
     picture,
     language,
+    geometry,
   } = req.body;
 
   //authentification
@@ -81,13 +84,9 @@ router.post("/", authChecker, async (req, res) => {
   const profileExists = await Shop.exists({ user_id: authId });
 
   //get coordinates from address
-  const newAddress = req.body.shop_contact.address;
-  const geocodify = await axios.get(
-    `https://api.geocodify.com/v2/geocode?api_key=${process.env.GEO_KEY}&q=${address}`
-  );
-  const html = geocodify.data;
-  const coordinates = html.response.features[0].geometry;
-  req.body.geometry = coordinates;
+  let newShop = req.body;
+  const newAddress = req.body.shop_address;
+  newShop.geometry = await getCoordinates(newAddress);
 
   try {
     if (!profileExists) {
@@ -102,13 +101,13 @@ router.post("/", authChecker, async (req, res) => {
   }
 });
 
-//Modify a new shop profile
+//Modify a shop profile
 router.put("/", authChecker, async (req, res) => {
-  const authId = String(res.locals.payload.id); //Stringifying the user ID in the token payload
+  const authId = res.locals.payload.user_id; //Stringifying the user ID in the token payload
   const modificationPossible = [
-    "geometry",
     "shop_name",
-    "shop_contact",
+    "shop_address",
+    "shop_phone",
     "description",
     "picture",
     "language",
@@ -116,14 +115,18 @@ router.put("/", authChecker, async (req, res) => {
   try {
     //Checking DB for shop ID
     const shop = await Shop.findById(req.query.shop_id);
+
     const shopUserId = String(shop.user_id); //Stringifying the user ID in the shop object
     //matching the IDs from the token with the ID in the shop object
     if (shopUserId === authId) {
-      modificationPossible.forEach((field) => {
-        if (req.body[field]) {
+      for (const field of modificationPossible) {
+        if (req.body[field] !== undefined) {
           shop[field] = req.body[field];
+          if (field.startsWith("shop_address")) {
+            shop.geometry = await getCoordinates(req.body[field]);
+          }
         }
-      });
+      }
       await shop.save();
       res.status(200).json(shop);
     } else {
