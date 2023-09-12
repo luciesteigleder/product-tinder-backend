@@ -4,6 +4,7 @@ import { Shop } from "../models/Shop.mjs";
 import dotenv from "dotenv";
 import authChecker from "../middleware/authChecker.mjs";
 import natural from "natural";
+import { query, validationResult } from "express-validator";
 
 const router = express.Router();
 router.use(express.json());
@@ -37,17 +38,24 @@ const getStem = async (string) => {
 
 //____________________________________________ROUTES___________________________________
 //get prov info from id
-router.get("/", async (req, res) => {
-  try {
-    console.log(req.query);
-    const provider = await Prov.findById(req.query.prov_id);
-    if (!provider) {
-      return res.status(404).send("Provider not found");
+router.get("/", query("prov_id").notEmpty().escape(), async (req, res) => {
+  const result = validationResult(req);
+  if (result.isEmpty()) {
+    try {
+      // console.log(req.query);
+      // console.log(typeof req.query.prov_id);
+      const provider = await Prov.findById(req.query.prov_id);
+
+      if (!provider) {
+        return res.status(404).send("Provider not found");
+      }
+      res.send(provider);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
     }
-    res.send(provider);
-  } catch (err) {
-    console.error(err.message);
-    res.sendStatus(500).send("Server Error");
+  } else {
+    res.send({ errors: result.array() });
   }
 });
 
