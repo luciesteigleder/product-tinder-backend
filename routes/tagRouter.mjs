@@ -57,7 +57,7 @@ router.get("/tag", async (req, res) => {
 });
 
 //add a tag
-router.post("/new", async (req, res) => {
+router.post("/new", authChecker, async (req, res) => {
   let newlyCreatedTag = req.body;
 
   //add the stemmed version of the tag name to the object

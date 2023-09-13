@@ -16,8 +16,8 @@ router.get("/", authChecker, async (req, res) => {
     const getConversation = await Conversation.findById(conversation_id);
 
     if (
-      authId === String(getConversation.shop_id) ||
-      authId === String(getConversation.prov_id)
+      authId == getConversation.shop_id ||
+      authId == getConversation.prov_id
     ) {
       res.json(getConversation);
     } else {
@@ -108,8 +108,9 @@ router.post("/mess/new/", authChecker, convAuth, async (req, res) => {
 });
 
 //Update message
-router.put("/mess", authChecker, async (req, res) => {
-  const userId = res.locals.payload.user_id;
+router.put("/mess", authChecker, convAuth, async (req, res) => {
+  // const provOrShopId = res.locals.payload.prov_id || res.locals.payload.shop_id;
+  // const userId = res.locals.payload.user_id;
   try {
     const { conversation_id, message_id } = req.query;
       const updatedMessage = await Conversation.findOneAndUpdate(
@@ -138,7 +139,7 @@ router.put("/mess", authChecker, async (req, res) => {
 });
 
 //get message
-router.get("/mess", async (req, res) => {
+router.get("/mess", authChecker ,convAuth, async (req, res) => {
   try {
     const { conversation_id, message_id } = req.query;
 
@@ -164,7 +165,7 @@ router.get("/mess", async (req, res) => {
 });
 
 //Delete message
-router.delete("/mess", async (req, res) => {
+router.delete("/mess", authChecker, convAuth, async (req, res) => {
   try {
     const { conversation_id, message_id } = req.query;
 

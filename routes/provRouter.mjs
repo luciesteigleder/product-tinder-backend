@@ -182,10 +182,11 @@ router.put("/", authChecker, async (req, res) => {
 
 //route to add a new tag
 router.put("/newTag", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id; //Stringifying the user ID in the token payload
+  const authId = res.locals.payload.user_id;
+  const authProvId = res.locals.payload.prov_id;
   try {
     //checking db for prov ID
-    const provider = await Prov.findById(req.query.prov_id);
+    const provider = await Prov.findById(authProvId);
     const providerUserId = provider.user_id; //Stringifying the user ID in the provider object
     //matching the IDs from the token with the ID in the provider object
     if (providerUserId == authId) {
@@ -236,12 +237,13 @@ router.put("/newTag", authChecker, async (req, res) => {
 });
 
 //delete a tag
-router.put("/deleteTag", async (req, res) => {
-  const authId = res.locals.payload.user_id; //Stringifying the user ID in the token payload
+router.put("/deleteTag", authChecker, async (req, res) => {
+  const authId = res.locals.payload.user_id; 
+  const authProvId = res.locals.payload.prov_id
   try {
     //checking db for prov ID
-    const provider = await Prov.findById(req.query.prov_id);
-    const providerUserId = provider.user_id; //Stringifying the user ID in the provider object
+    const provider = await Prov.findById(authProvId);
+    const providerUserId = provider.user_id;
     //matching the IDs from the token with the ID in the provider object
     if (providerUserId == authId) {
       try {
