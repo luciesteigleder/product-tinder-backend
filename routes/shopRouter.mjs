@@ -138,8 +138,72 @@ router.put("/", authChecker, async (req, res) => {
 });
 
 //get results from a search
-router.get("/search", (req, res) => {
-  res.send("search route ok");
+router.get("/search", authChecker, async (req, res) => {
+  const { max_distance, categories, tags } = req.body;
+  const shopId = res.locals.payload.shop_id;
+  try {
+    const shop = await Shop.findById(shopId);
+    const shopLoc = shop.geometry.coordinates;
+
+    //Creating an array of objects for the Provs that match the minimum distance
+    const nearProvs = await Prov.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [parseFloat(shopLoc[0]), parseFloat(shopLoc[1])],
+          },
+          distanceField: "distance",
+          maxDistance: max_distance,
+          spherical: true,
+        },
+      },
+    ]);
+    if (nearProvs.length === 0) {
+      res.status(404).send("there's no provs around");
+    }
+    //Creating a new array of objects for the results of the category match
+    const catMatchProv = [];
+
+    //Searching for matches and attributing them a score to sort out results later
+    nearProvs.forEach((prov) => {
+      let score = 0;
+      for (let j = 0; j < prov.categories.length; j++) {
+        for (let i = 0; i < categories.length; i++) {
+          if (categories[i] === prov.categories[j]) {
+            score++;
+            prov.score = score;
+            catMatchProv.push(prov);
+            console.log(score);
+          }
+        }
+      }
+    });
+
+    // const tagMatchProv = []
+
+    // catMatchProv.forEach((prov) => {
+    //   let score = prov.score;
+    //   for (let j = 0; j < prov.tags.length; j++) {        
+    //     for (let i = 0; i < tags.length; i++) {
+    //       if (tags[i] === prov.tags[j].tag_name) {
+    //         score = score+2;
+    //         prov.score = score
+    //         tagMatchProv.push(prov);
+    //         console.log(score);
+    //       }
+    //     }
+    //   }
+    // });
+
+    res.json(catMatchProv);
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+  // const { distance, categories, tags } = req.body
+  // const distValid = await Prov.find({distance : {$ste:10}})
 });
 
 export default router;
