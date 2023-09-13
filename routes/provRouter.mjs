@@ -146,6 +146,8 @@ router.post("/", authChecker, async (req, res) => {
 //Modify a prov profile
 router.put("/", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id;
+  const authProvId = res.locals.payload.prov_id;
+
   const modificationPossible = [
     "prov_name",
     "prov_address",
@@ -155,10 +157,10 @@ router.put("/", authChecker, async (req, res) => {
     "language",
   ];
   try {
-    const provider = await Prov.findById(req.query.prov_id);
+    const provider = await Prov.findById(authProvId);
     const providerUserId = provider.user_id;
     if (providerUserId == authId) {
-      for (const field of modificationPossible) {
+      const updatePromises = modificationPossible.map(async (field) => {
         if (req.body[field] !== undefined) {
           provider[field] = req.body[field];
           if (field.startsWith("prov_address")) {
@@ -166,8 +168,8 @@ router.put("/", authChecker, async (req, res) => {
             console.log(provider.geometry);
           }
         }
-      }
-
+      });
+      await Promise.all(updatePromises);
       console.log(provider);
       await provider.save();
       res.status(200).send("Data modified successfully!");
@@ -183,9 +185,10 @@ router.put("/", authChecker, async (req, res) => {
 //route to add a new tag
 router.put("/newTag", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id; //Stringifying the user ID in the token payload
+  const authProvId = res.locals.payload.prov_id;
   try {
     //checking db for prov ID
-    const provider = await Prov.findById(req.query.prov_id);
+    const provider = await Prov.findById(authProvId);
     const providerUserId = provider.user_id; //Stringifying the user ID in the provider object
     //matching the IDs from the token with the ID in the provider object
     if (providerUserId == authId) {
@@ -236,24 +239,29 @@ router.put("/newTag", authChecker, async (req, res) => {
 });
 
 //delete a tag
-router.put("/deleteTag", async (req, res) => {
+router.put("/deleteTag", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id; //Stringifying the user ID in the token payload
+  const authProvId = res.locals.payload.prov_id;
+
   try {
     //checking db for prov ID
-    const provider = await Prov.findById(req.query.prov_id);
+    const provider = await Prov.findById(authProvId);
     const providerUserId = provider.user_id; //Stringifying the user ID in the provider object
     //matching the IDs from the token with the ID in the provider object
     if (providerUserId == authId) {
       try {
         const updateQuery = {
-          $pull: { tags: { _id: tagId } },
+          $pull: { tags: { _id: req.query.tag_id } },
         };
-        const provToBeUpdated = await Prov.findOneAndUpdate(
-          { prov_id: provId },
-          updateQuery,
-          { new: true }
+        console.log("updatedQuery");
+        console.log(updateQuery);
+
+        const updatedProvider = await Prov.updateOne(
+          { _id: provider._id },
+          updateQuery
         );
-        res.json(provToBeUpdated);
+
+        res.json(updatedProvider);
       } catch (err) {
         console.error(err.message);
         res.status(400).send("Server Error");

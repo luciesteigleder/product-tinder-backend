@@ -104,6 +104,8 @@ router.post("/", authChecker, async (req, res) => {
 //Modify a shop profile
 router.put("/", authChecker, async (req, res) => {
   const authId = res.locals.payload.user_id;
+  const authShopId = res.locals.payload.shop_id;
+
   const modificationPossible = [
     "shop_name",
     "shop_address",
@@ -114,18 +116,22 @@ router.put("/", authChecker, async (req, res) => {
   ];
   try {
     //Checking DB for shop ID
-    const shop = await Shop.findById(req.query.shop_id);
+    const shop = await Shop.findById(authShopId);
     const shopUserId = shop.user_id;
     //matching the IDs from the token with the ID in the shop object
     if (shopUserId == authId) {
-      modificationPossible.forEach(async (field) => {
+      const updatePromises = modificationPossible.map(async (field) => {
         if (req.body[field]) {
           shop[field] = req.body[field];
           if (field.startsWith("shop_address")) {
             shop.geometry = await getCoordinates(req.body[field]);
+            console.log(shop.geometry);
           }
         }
       });
+
+      await Promise.all(updatePromises);
+      console.log(shop.geometry);
       await shop.save();
       res.status(200).json(shop);
     } else {
