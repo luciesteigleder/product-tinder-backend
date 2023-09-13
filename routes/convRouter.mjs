@@ -1,6 +1,7 @@
 import express from "express";
 import { Conversation, conversationSchema } from "../models/Conversation.mjs";
 import authChecker from "../middleware/authChecker.mjs";
+import convAuth from "../middleware/convAuth.mjs";
 
 const router = express.Router();
 router.use(express.json());
@@ -60,7 +61,6 @@ router.delete("/", authChecker, async (req, res) => {
     console.log("convProvId: " + String(convProvId));
     console.log("convShopId: " + String(convShopId));
     if (convProvId == authProvId || convShopId == authShopId) {
-
       const deletedConversation = await Conversation.deleteOne({
         _id: conversation_id,
       });
@@ -78,25 +78,29 @@ router.delete("/", authChecker, async (req, res) => {
 
 //MESSAGES
 //Creates new message
-router.post("/mess/new/", async (req, res) => {
-  //the id here is the conversation ID
+router.post("/mess/new/", authChecker, convAuth, async (req, res) => {
+  //Select the user ID and shop/provider ID from the jwt payload
+  const provOrShopId = res.locals.payload.prov_id || res.locals.payload.shop_id;
+  const userId = res.locals.payload.user_id;
   try {
     const conversation_id = req.query.conversation_id;
-    console.log(conversation_id);
-
-    const currentConv = await Conversation.findByIdAndUpdate(
-      conversation_id,
-      {
-        $push: {
-          messages: {
-            message_author: req.body.message_author,
-            message_text: req.body.message_text,
+      const currentConv = await Conversation.findByIdAndUpdate(
+        conversation_id,
+        {
+          $push: {
+            messages: {
+              message_author: userId,
+              message_text: req.body.message_text,
+            },
           },
         },
-      },
-      { new: true }
-    );
-    res.json(currentConv);
+        { new: true }
+      );
+      res.json(currentConv);
+    // } else {
+    //   console.log("not a user of this conversation");
+    //   res.send("not a user of this conversation");
+    // }
   } catch (err) {
     console.error(err.message);
     res.status(400).json({ message: err.message });
@@ -104,28 +108,29 @@ router.post("/mess/new/", async (req, res) => {
 });
 
 //Update message
-router.put("/mess", async (req, res) => {
+router.put("/mess", authChecker, async (req, res) => {
+  const userId = res.locals.payload.user_id;
   try {
     const { conversation_id, message_id } = req.query;
-
-    const updatedMessage = await Conversation.findOneAndUpdate(
-      {
-        _id: conversation_id,
-        "messages._id": message_id,
-      },
-      {
-        $set: {
-          "messages.$.message_text": req.body.message_text, // Update the message_text field as needed
+      const updatedMessage = await Conversation.findOneAndUpdate(
+        {
+          _id: conversation_id,
+          "messages._id": message_id,
         },
-      },
-      { new: true }
-    );
+        {
+          $set: {
+            "messages.$.message_text": req.body.message_text, // Update the message_text field as needed
+          },
+        },
+        { new: true }
+      );
 
-    if (!updatedMessage) {
-      return res.status(404).json({ message: "Message not found" });
-    }
+      if (!updatedMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
 
-    res.json(updatedMessage);
+      res.json(updatedMessage);
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

@@ -1,8 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/User.mjs";
+import { User, userSchema } from "../models/User.mjs";
 import { Shop } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
+import authChecker from "../middleware/authChecker.mjs";
 
 const router = express.Router();
 
@@ -105,16 +106,13 @@ router.post("/login", async (req, res) => {
     if (shopExist) {
       const shopId = shop[0].id;
       token = createToken(userId, shopId, null);
-      console.log(shopId)
     }
     else if (provExist) {
       const provId = prov[0].id;
       token = createToken(userId, null, provId);
-      console.log(provId)
     }
     else{
       token = createToken(userId, null, null);
-      // throw Error('No shop or prov profile')
     }
 
     // res.cookie("jwt", token, {
