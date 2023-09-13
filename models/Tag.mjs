@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+//_________________TO BE DELETED, HAS BEEN INTEGRATED WITHIN THE PROV SCHEMA
+
 const tagSchema = new mongoose.Schema({
   tag_name: {
     type: String,
@@ -16,10 +18,10 @@ const tagSchema = new mongoose.Schema({
     required: true,
   },
 
-  shop_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Shop",
-  },
+  // shop_id: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "Shop",
+  // },
   prov_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Prov",

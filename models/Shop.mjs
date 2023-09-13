@@ -1,4 +1,22 @@
 import mongoose from "mongoose";
+import axios from "axios";
+
+const getCoordinates = async (address) => {
+  try {
+    if (!address) {
+      throw new Error("Address is missing");
+    }
+    const geocodify = await axios.get(
+      `https://api.geocodify.com/v2/geocode?api_key=${process.env.GEO_KEY}&q=${address}`
+    );
+    const html = geocodify.data;
+    const coordinates = html.response.features[0].geometry;
+    return coordinates;
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
 
 //shopGeoSchema
 const shopGeoSchema = new mongoose.Schema({
@@ -45,7 +63,14 @@ const shopSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  shop_contact: { address: String, phone: Number },
+  shop_address: {
+    type: String,
+    required: true,
+  },
+  shop_phone: {
+    type: Number,
+    required: true,
+  },
   description: {
     type: String,
     required: true,
@@ -64,4 +89,4 @@ const shopSchema = new mongoose.Schema({
 
 const Shop = mongoose.model("Shop", shopSchema);
 
-export { Shop, shopSchema };
+export { Shop, shopSchema, getCoordinates };
