@@ -4,11 +4,26 @@ import { Shop, getCoordinates } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
 import authChecker from "../middleware/authChecker.mjs";
 import authToken from "../middleware/authChecker.mjs";
+import { query, validationResult } from "express-validator";
+
+import {
+  validateShopData,
+  validateDataForPut,
+  upload,
+} from "../middleware/validateData.mjs";
 const router = express.Router();
 
-//get it to change the coordinates when they change the address
-
 router.use(express.json());
+
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    res.status(400).json({ error: "File upload error" });
+  } else if (err instanceof Error) {
+    res.status(400).json({ error: err.message });
+  } else {
+    next();
+  }
+});
 
 //Error Handler
 const handleErrors = (err) => {
@@ -22,7 +37,7 @@ const handleErrors = (err) => {
 };
 
 //get shop info
-router.get("/", async (req, res) => {
+router.get("/", query("shop_id").notEmpty().escape(), async (req, res) => {
   try {
     const shop = await Shop.findById(req.query.shop_id);
     if (!shop) {
@@ -65,77 +80,105 @@ router.get("/loc", async (req, res) => {
 });
 
 //Create a new shop profile
-router.post("/", authChecker, async (req, res) => {
-  let authId = res.locals.payload.user_id;
-  console.log(authId);
-  let {
-    user_id,
-    shop_name,
-    shop_address,
-    shop_phone,
-    description,
-    picture,
-    language,
-    geometry,
-  } = req.body;
-
-  //authentification
-  req.body.user_id = authId;
-  const profileExists = await Shop.exists({ user_id: authId });
-
-  //get coordinates from address
-  let newShop = req.body;
-  const newAddress = req.body.shop_address;
-  newShop.geometry = await getCoordinates(newAddress);
-
-  try {
-    if (!profileExists) {
-      const newShop = await Shop.create(req.body);
-      res.status(200).json(newShop);
-    } else {
-      throw Error("profile exists");
+router.post(
+  "/",
+  //upload.single("picture"),
+  validateShopData,
+  authChecker,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors });
+    let authId = res.locals.payload.user_id;
+    //console.log(authId);
+    let {
+      user_id,
+      shop_name,
+      shop_address,
+      shop_phone,
+      description,
+      picture,
+      language,
+      geometry,
+    } = req.body;
+
+    //authentification
+    req.body.user_id = authId;
+    const profileExists = await Shop.exists({ user_id: authId });
+
+    //get coordinates from address
+    let newShop = req.body;
+    const newAddress = req.body.shop_address;
+    newShop.geometry = await getCoordinates(newAddress);
+
+    try {
+      if (!profileExists) {
+        const newShop = await Shop.create(req.body);
+        res.status(200).json(newShop);
+      } else {
+        throw Error("profile exists");
+      }
+    } catch (err) {
+      const errors = handleErrors(err);
+      res.status(400).json({ errors });
+    }
   }
-});
+);
 
 //Modify a shop profile
-router.put("/", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id;
-  const modificationPossible = [
-    "shop_name",
-    "shop_address",
-    "shop_phone",
-    "description",
-    "picture",
-    "language",
-  ];
-  try {
-    //Checking DB for shop ID
-    const shop = await Shop.findById(req.query.shop_id);
-    const shopUserId = shop.user_id;
-    //matching the IDs from the token with the ID in the shop object
-    if (shopUserId == authId) {
-      modificationPossible.forEach(async (field) => {
-        if (req.body[field]) {
-          shop[field] = req.body[field];
-          if (field.startsWith("shop_address")) {
-            shop.geometry = await getCoordinates(req.body[field]);
-          }
-        }
-      });
-      await shop.save();
-      res.status(200).json(shop);
-    } else {
-      res.status(400).send("You don't have the rights to modify this profile");
+router.put(
+  "/",
+  validateDataForPut,
+  //upload.single("picture"),
+  authChecker,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    console.error(err.message);
-    res.status(400).send("Server Error");
+    const authId = res.locals.payload.user_id;
+    const authShopId = res.locals.payload.shop_id;
+
+    const modificationPossible = [
+      "shop_name",
+      "shop_address",
+      "shop_phone",
+      "description",
+      "picture",
+      "language",
+    ];
+    try {
+      //Checking DB for shop ID
+      const shop = await Shop.findById(authShopId);
+      const shopUserId = shop.user_id;
+      //matching the IDs from the token with the ID in the shop object
+      if (shopUserId == authId) {
+        const updatePromises = modificationPossible.map(async (field) => {
+          if (req.body[field]) {
+            shop[field] = req.body[field];
+            if (field.startsWith("shop_address")) {
+              shop.geometry = await getCoordinates(req.body[field]);
+              console.log(shop.geometry);
+            }
+          }
+        });
+
+        await Promise.all(updatePromises);
+        console.log(shop.geometry);
+        await shop.save();
+        res.status(200).json(shop);
+      } else {
+        res
+          .status(400)
+          .send("You don't have the rights to modify this profile");
+      }
+    } catch (err) {
+      console.error(err.message);
+      res.status(400).send("Server Error");
+    }
   }
-});
+);
 
 //get results from a search
 router.get("/search", authChecker, async (req, res) => {

@@ -94,7 +94,6 @@ const provSchema = new mongoose.Schema({
   },
   tags: [provTagSchema],
   categories: {
-    // check whether we want plurial or singular
     type: [String],
     ref: "Category",
   },
