@@ -33,24 +33,54 @@ const shopGeoSchema = new mongoose.Schema({
 });
 
 //shopResultsSchema
-const shopResultsSchema = new mongoose.Schema({
+// const shopResultsSchema = new mongoose.Schema({
+//   prov_id: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "Prov",
+//     required: true,
+//   },
+//   distance: {
+//     type: Number,
+//   },
+// });
+
+//shopSearchSchema
+// const shopSearchSchema = new mongoose.Schema({
+//   criteria: {
+//     type: Object,
+//   },
+//   results: shopResultsSchema,
+// });
+const resultSchema = new mongoose.Schema ({
+  distance: {
+    type: Number,
+    required: true
+  },
+  score: {
+    type: Number,
+    required: true
+  },
   prov_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Prov",
-    required: true,
-  },
-  distance: {
-    type: Number,
-  },
-});
+    required: true
+  }
+})
 
-//shopSearchSchema
-const shopSearchSchema = new mongoose.Schema({
-  criteria: {
-    type: Object,
+const searchSchema = new mongoose.Schema ({
+  distance_max: {
+    type: Number,
+    required: true
   },
-  results: shopResultsSchema,
-});
+  search_categories: {
+    type: [String]
+  },
+  search_tags: {
+    type: [String]
+  },
+  results: [resultSchema]
+})
+
 
 const shopSchema = new mongoose.Schema({
   user_id: {
@@ -85,7 +115,9 @@ const shopSchema = new mongoose.Schema({
   fav_prov: {
     type: [mongoose.Schema.Types.ObjectId],
   },
+  search: [searchSchema]
 });
+
 
 const Shop = mongoose.model("Shop", shopSchema);
 

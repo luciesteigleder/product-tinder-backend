@@ -93,12 +93,10 @@ const provSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
   },
   tags: [provTagSchema],
-  categories: [
-    {
-      type: String,
-      required: true,
-    },
-  ],
+  categories: {
+    type: [String],
+    ref: "Category",
+  },
 });
 
 const Prov = mongoose.model("Prov", provSchema);
