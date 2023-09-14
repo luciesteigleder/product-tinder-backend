@@ -280,49 +280,54 @@ router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
 });
 
 //delete a tag
-router.put(
-  "/deleteTag",
-  query("prov_id").notEmpty().escape(),
-  authChecker,
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const authId = res.locals.payload.user_id;
-    const authProvId = res.locals.payload.prov_id;
-    try {
-      //checking db for prov ID
-      const provider = await Prov.findById(authProvId);
-      const providerUserId = provider.user_id;
-      //matching the IDs from the token with the ID in the provider object
-      if (providerUserId == authId) {
-        try {
-          const updateQuery = {
-            $pull: { tags: { _id: req.query.tag_id } },
-          };
-          console.log("updatedQuery");
-          console.log(updateQuery);
-
-          const updatedProvider = await Prov.updateOne(
-            { _id: provider._id },
-            updateQuery
-          );
-
-          res.json(updatedProvider);
-        } catch (err) {
-          console.error(err.message);
-          res.status(400).send("Server Error");
-        }
-      } else {
-        res.status(400).send("You don't have the rights to delete this tag");
-      }
-    } catch (err) {
-      console.error(err.message);
-      res.status(400).send("Server Error");
-    }
+router.put("/deleteTag", authChecker, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+  const authId = res.locals.payload.user_id;
+
+  const authProvId = res.locals.payload.prov_id;
+  try {
+    // checking db for prov ID
+    const provider = await Prov.findById(authProvId);
+    console.log("provider");
+    console.log(provider);
+    const providerUserId = provider.user_id;
+    // matching the IDs from the token with the ID in the provider object
+    if (providerUserId == authId) {
+      // check if the provider has this tag
+      let tagToBeDeleted;
+      console.log("prov.tags");
+      console.log(provider.tags);
+
+      provider.tags.forEach((tag) => {
+        if (tag._id.toString() === req.query.tag_id) {
+          tagToBeDeleted = tag;
+          console.log("tagToBeDeleted");
+          console.log(tagToBeDeleted);
+        }
+      });
+
+      if (!tagToBeDeleted) {
+        return res.status(400).json("This user doesn't have such tag");
+      }
+
+      const updatedTags = provider.tags.filter((tag) => tag !== tagToBeDeleted);
+
+      provider.tags = updatedTags;
+      await provider.save();
+      return res.json(provider.tags);
+    } else {
+      return res
+        .status(400)
+        .send("You don't have the rights to delete this tag");
+    }
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send("Server Error");
+  }
+});
 
 //get results from a search
 router.get("/search", (req, res) => {
