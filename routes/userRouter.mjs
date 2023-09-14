@@ -4,6 +4,13 @@ import { User, userSchema } from "../models/User.mjs";
 import { Shop } from "../models/Shop.mjs";
 import { Prov } from "../models/Prov.mjs";
 import authChecker from "../middleware/authChecker.mjs";
+import { query, validationResult } from "express-validator";
+
+import {
+  validateSignUp,
+  validateLogin,
+  validateChangePW,
+} from "../middleware/validateData.mjs";
 
 const router = express.Router();
 
@@ -12,7 +19,7 @@ router.use(express.json());
 //Handling errors and passing them to the front end
 const handleErrors = (err) => {
   console.log(err.message, err.code);
-  let errors = { email: "", password: "", other:"" };
+  let errors = { email: "", password: "", other: "" };
 
   //Handling validation issues
   if (err.message.includes("User validation failed")) {
@@ -37,11 +44,10 @@ const handleErrors = (err) => {
 
   //No linked prov or shop profile to a user when logging in
   if (err.message === "No shop or prov profile") {
-    errors.other= "There is no shop or provider profile linked to this user"
+    errors.other = "There is no shop or provider profile linked to this user";
   }
 
   return errors;
-
 };
 
 //Display user info
@@ -67,7 +73,11 @@ const createToken = (user_id = null, shop_id = null, prov_id = null) => {
 };
 
 //Sign up route
-router.post("/signup", async (req, res) => {
+router.post("/signup", validateSignUp, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   const { username, password, email, profile_type } = req.body;
   try {
     const newUser = await User.create({
@@ -90,7 +100,11 @@ router.post("/signup", async (req, res) => {
 });
 
 //Log in
-router.post("/login", async (req, res) => {
+router.post("/login", validateLogin, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   const { email, password } = req.body;
   try {
     //passing the login statics method (in user model) to verify if email & password match
@@ -106,12 +120,10 @@ router.post("/login", async (req, res) => {
     if (shopExist) {
       const shopId = shop[0].id;
       token = createToken(userId, shopId, null);
-    }
-    else if (provExist) {
+    } else if (provExist) {
       const provId = prov[0].id;
       token = createToken(userId, null, provId);
-    }
-    else{
+    } else {
       token = createToken(userId, null, null);
     }
 
@@ -121,6 +133,44 @@ router.post("/login", async (req, res) => {
     //   maxAge: 7200000,
     // });
     res.status(200).json(token);
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json({ errors });
+  }
+});
+
+//change password
+router.put("/changepw", validateChangePW, authChecker, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  let authId = res.locals.payload.user_id;
+
+  //authentification
+  req.body.user_id = authId;
+
+  try {
+    const newPWUUser = await User.findById(authId);
+    if (!newPWUUser) {
+      res.status(400).json("no user found");
+    }
+    newPWUUser.password = req.body.password;
+    if (res.locals.payload.shop_id) {
+      newPWUUser.shop_id = res.locals.payload.shop_id;
+    } else if (res.locals.payload.prov_id) {
+      newPWUUser.prov_id = res.locals.payload.prov_id;
+    }
+
+    const token = createToken(
+      newPWUUser._id,
+      newPWUUser.shop_id,
+      newPWUUser.prov_id
+    );
+    console.log(token);
+
+    await newPWUUser.save();
+    res.status(200).json(newPWUUser);
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors });
