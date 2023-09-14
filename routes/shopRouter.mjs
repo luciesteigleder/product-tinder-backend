@@ -66,7 +66,7 @@ router.get("/loc", async (req, res) => {
 
 //Create a new shop profile
 router.post("/", authChecker, async (req, res) => {
-  let authId = res.locals.payload.user_id; //check with coach ( create an object to not modify req.body  )
+  let authId = res.locals.payload.user_id;
   console.log(authId);
   let {
     user_id,
@@ -162,48 +162,71 @@ router.get("/search", authChecker, async (req, res) => {
     if (nearProvs.length === 0) {
       res.status(404).send("there's no provs around");
     }
-    //Creating a new array of objects for the results of the category match
-    const catMatchProv = [];
 
-    //Searching for matches and attributing them a score to sort out results later
-    nearProvs.forEach((prov) => {
-      let score = 0;
-      for (let j = 0; j < prov.categories.length; j++) {
-        for (let i = 0; i < categories.length; i++) {
-          if (categories[i] === prov.categories[j]) {
-            score++;
-            prov.score = score;
-            catMatchProv.push(prov);
-            console.log(score);
+    //Searching for category matches and attributing them a score to sort out results
+    const sortByCat = async () => {
+      const catMatchProv = [];
+      const addedProvs = [];
+      nearProvs.forEach((prov) => {
+        for (let j = 0; j < prov.categories.length; j++) {
+          for (let i = 0; i < categories.length; i++) {
+            const existingProvider = catMatchProv.find(
+              (existing) => existing._id === prov._id
+            );
+            if (
+              categories[i] === prov.categories[j] &&
+              !addedProvs.includes(prov)
+            ) {
+              prov.score++;
+              catMatchProv.push(prov);
+              addedProvs.push(prov);
+            } else if (
+              categories[i] === prov.categories[j] &&
+              addedProvs.includes(prov)
+            ) {
+              existingProvider.score++;
+            }
           }
         }
-      }
-    });
+      });
+      return catMatchProv;
+    };
 
-    // const tagMatchProv = []
-
-    // catMatchProv.forEach((prov) => {
-    //   let score = prov.score;
-    //   for (let j = 0; j < prov.tags.length; j++) {        
-    //     for (let i = 0; i < tags.length; i++) {
-    //       if (tags[i] === prov.tags[j].tag_name) {
-    //         score = score+2;
-    //         prov.score = score
-    //         tagMatchProv.push(prov);
-    //         console.log(score);
-    //       }
-    //     }
-    //   }
-    // });
-
-    res.json(catMatchProv);
-
+    //Searching for tag matches and attributing them a score to sort out results
+    const sortByTag = async () => {
+      const finalProv = [];
+      const addedProvs = [];
+      const tagMatchProv = await sortByCat();
+      tagMatchProv.forEach((prov) => {
+        for (let j = 0; j < prov.tags.length; j++) {
+          for (let i = 0; i < tags.length; i++) {
+            const existingProvider = tagMatchProv.find(
+              (existing) => existing._id === prov._id
+            );
+            if (
+              tags[i] === prov.tags[j].tag_name &&
+              !addedProvs.includes(prov)
+            ) {
+              prov.score += 2;
+              finalProv.push(prov);
+              addedProvs.push(prov);
+            } else if (
+              tags[i] === prov.tags[j].tag_name &&
+              addedProvs.includes(prov)
+            ) {
+              existingProvider.score += 2;
+            }
+          }
+        }
+      });
+      return finalProv;
+    };
+    const result = await sortByTag();
+    res.json(result);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
   }
-  // const { distance, categories, tags } = req.body
-  // const distValid = await Prov.find({distance : {$ste:10}})
 });
 
 export default router;
