@@ -5,10 +5,25 @@ import dotenv from "dotenv";
 import authChecker from "../middleware/authChecker.mjs";
 import natural from "natural";
 import { query, validationResult } from "express-validator";
+import {
+  validateProvData,
+  validateDataForPut,
+  upload,
+} from "../middleware/validateData.mjs";
 
 const router = express.Router();
 router.use(express.json());
 const stemmer = natural.PorterStemmer;
+
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    res.status(400).json({ error: "File upload error" });
+  } else if (err instanceof Error) {
+    res.status(400).json({ error: err.message });
+  } else {
+    next();
+  }
+});
 
 //___________________________FUNCTIONS_________________________
 
@@ -91,99 +106,125 @@ router.get("/loc", async (req, res) => {
 
 //Create a new prov profile
 
-router.post("/", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id;
-  let {
-    user_id,
-    prov_name,
-    prov_address,
-    prov_phone,
-    description,
-    picture,
-    language,
-    geometry,
-    tags,
-    categories,
-  } = req.body;
-
-  //authentification
-  req.body.user_id = authId;
-  const profileExists = await Prov.exists({ user_id: authId });
-
-  //get coordinates from address
-  let newProv = req.body;
-  const newAddress = req.body.prov_address;
-  newProv.geometry = await getCoordinates(newAddress);
-
-  //get the stemmed version of the tag
-  let newlyCreatedTag = req.body.tags;
-  let stemmedTags = [];
-
-  for (const element of newlyCreatedTag) {
-    // for because forEach does not work well with asynchronous
-    let tagObject = {};
-    tagObject.tag_name = element;
-    tagObject.tag_stem = await getStem(element);
-    stemmedTags.push(tagObject);
-  }
-
-  newProv.tags = stemmedTags;
-
-  //save profile
-  try {
-    if (!profileExists) {
-      const newProvCreated = await Prov.create(newProv);
-      res.status(200).json(newProvCreated);
-    } else {
-      throw Error("profile exists");
+router.post(
+  "/",
+  //upload.single("picture"),
+  validateProvData,
+  authChecker,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors });
+    const authId = res.locals.payload.user_id;
+    let {
+      user_id,
+      prov_name,
+      prov_address,
+      prov_phone,
+      description,
+      picture,
+      language,
+      geometry,
+      tags,
+      categories,
+    } = req.body;
+
+    //authentification
+    req.body.user_id = authId;
+    const profileExists = await Prov.exists({ user_id: authId });
+
+    //get coordinates from address
+    let newProv = req.body;
+    const newAddress = req.body.prov_address;
+    newProv.geometry = await getCoordinates(newAddress);
+
+    //get the stemmed version of the tag
+    let newlyCreatedTag = req.body.tags;
+    let stemmedTags = [];
+
+    for (const element of newlyCreatedTag) {
+      // for because forEach does not work well with asynchronous
+      let tagObject = {};
+      tagObject.tag_name = element;
+      tagObject.tag_stem = await getStem(element);
+      stemmedTags.push(tagObject);
+    }
+
+    newProv.tags = stemmedTags;
+
+    //save profile
+    try {
+      if (!profileExists) {
+        const newProvCreated = await Prov.create(newProv);
+        res.status(200).json(newProvCreated);
+      } else {
+        throw Error("profile exists");
+      }
+    } catch (err) {
+      const errors = handleErrors(err);
+      res.status(400).json({ errors });
+    }
   }
-});
+);
 
 //Modify a prov profile
-router.put("/", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id;
-  const authProvId = res.locals.payload.prov_id;
-
-  const modificationPossible = [
-    "prov_name",
-    "prov_address",
-    "prov_phone",
-    "description",
-    "picture",
-    "language",
-  ];
-  try {
-    const provider = await Prov.findById(authProvId);
-    const providerUserId = provider.user_id;
-    if (providerUserId == authId) {
-      const updatePromises = modificationPossible.map(async (field) => {
-        if (req.body[field] !== undefined) {
-          provider[field] = req.body[field];
-          if (field.startsWith("prov_address")) {
-            provider.geometry = await getCoordinates(req.body[field]);
-            console.log(provider.geometry);
-          }
-        }
-      });
-      await Promise.all(updatePromises);
-      console.log(provider);
-      await provider.save();
-      res.status(200).send("Data modified successfully!");
-    } else {
-      res.status(400).send("You don't have the rights to modify this profile");
+router.put(
+  "/",
+  validateDataForPut,
+  //upload.single("picture"),
+  authChecker,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    console.error(err.message);
-    res.status(400).send("Server Error");
+    const authId = res.locals.payload.user_id;
+    const authProvId = res.locals.payload.prov_id;
+
+    const modificationPossible = [
+      "prov_name",
+      "prov_address",
+      "prov_phone",
+      "description",
+      "picture",
+      "language",
+    ];
+    try {
+      const provider = await Prov.findById(authProvId);
+      const providerUserId = provider.user_id;
+      if (providerUserId == authId) {
+        const updatePromises = modificationPossible.map(async (field) => {
+          if (req.body[field] !== undefined) {
+            provider[field] = req.body[field];
+            if (field.startsWith("prov_address")) {
+              provider.geometry = await getCoordinates(req.body[field]);
+              console.log(provider.geometry);
+            }
+          }
+        });
+        await Promise.all(updatePromises);
+        console.log(provider);
+        await provider.save();
+        res.status(200).send("Data modified successfully!");
+      } else {
+        res
+          .status(400)
+          .send("You don't have the rights to modify this profile");
+      }
+    } catch (err) {
+      console.error(err.message);
+      res.status(400).send("Server Error");
+    }
   }
-});
+);
 
 //route to add a new tag
-router.put("/newTag", authChecker, async (req, res) => {
+router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   const authId = res.locals.payload.user_id;
   const authProvId = res.locals.payload.prov_id;
   try {
@@ -239,40 +280,49 @@ router.put("/newTag", authChecker, async (req, res) => {
 });
 
 //delete a tag
-router.put("/deleteTag", authChecker, async (req, res) => {
-  const authId = res.locals.payload.user_id;
-  const authProvId = res.locals.payload.prov_id;
-  try {
-    //checking db for prov ID
-    const provider = await Prov.findById(authProvId);
-    const providerUserId = provider.user_id;
-    //matching the IDs from the token with the ID in the provider object
-    if (providerUserId == authId) {
-      try {
-        const updateQuery = {
-          $pull: { tags: { _id: req.query.tag_id } },
-        };
-        console.log("updatedQuery");
-        console.log(updateQuery);
-
-        const updatedProvider = await Prov.updateOne(
-          { _id: provider._id },
-          updateQuery
-        );
-
-        res.json(updatedProvider);
-      } catch (err) {
-        console.error(err.message);
-        res.status(400).send("Server Error");
-      }
-    } else {
-      res.status(400).send("You don't have the rights to delete this tag");
+router.put(
+  "/deleteTag",
+  query("prov_id").notEmpty().escape(),
+  authChecker,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  } catch (err) {
-    console.error(err.message);
-    res.status(400).send("Server Error");
+    const authId = res.locals.payload.user_id;
+    const authProvId = res.locals.payload.prov_id;
+    try {
+      //checking db for prov ID
+      const provider = await Prov.findById(authProvId);
+      const providerUserId = provider.user_id;
+      //matching the IDs from the token with the ID in the provider object
+      if (providerUserId == authId) {
+        try {
+          const updateQuery = {
+            $pull: { tags: { _id: req.query.tag_id } },
+          };
+          console.log("updatedQuery");
+          console.log(updateQuery);
+
+          const updatedProvider = await Prov.updateOne(
+            { _id: provider._id },
+            updateQuery
+          );
+
+          res.json(updatedProvider);
+        } catch (err) {
+          console.error(err.message);
+          res.status(400).send("Server Error");
+        }
+      } else {
+        res.status(400).send("You don't have the rights to delete this tag");
+      }
+    } catch (err) {
+      console.error(err.message);
+      res.status(400).send("Server Error");
+    }
   }
-});
+);
 
 //get results from a search
 router.get("/search", (req, res) => {

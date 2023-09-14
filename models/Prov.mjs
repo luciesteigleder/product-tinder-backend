@@ -93,11 +93,12 @@ const provSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
   },
   tags: [provTagSchema],
-  categories: {
-    // check whether we want plurial or singular
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "Category",
-  },
+  categories: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
 });
 
 const Prov = mongoose.model("Prov", provSchema);
