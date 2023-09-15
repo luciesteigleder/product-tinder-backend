@@ -240,38 +240,44 @@ router.get("/search", authChecker, async (req, res) => {
       let finalProv = [];
       const addedProvs = [];
       const tagMatchProv = await sortByCat();
-      console.log(tags)
-      if (tags.length > 0){
-      tagMatchProv.forEach((prov) => {
-        for (let j = 0; j < prov.tags.length; j++) {
-          for (let i = 0; i < tags.length; i++) {
-            const existingProvider = tagMatchProv.find(
-              (existing) => existing._id === prov._id
-            );
-            if (
-              tags[i] === prov.tags[j].tag_name &&
-              !addedProvs.includes(prov)
-            ) {
-              prov.score += 2;
-              finalProv.push(prov);
-              addedProvs.push(prov);
-            } else if (
-              tags[i] === prov.tags[j].tag_name &&
-              addedProvs.includes(prov)
-            ) {
-              existingProvider.score += 2;
+      console.log(tags);
+      if (tags.length > 0) {
+        tagMatchProv.forEach((prov) => {
+          for (let j = 0; j < prov.tags.length; j++) {
+            for (let i = 0; i < tags.length; i++) {
+              const existingProvider = tagMatchProv.find(
+                (existing) => existing._id === prov._id
+              );
+              if (
+                tags[i] === prov.tags[j].tag_name &&
+                !addedProvs.includes(prov)
+              ) {
+                prov.score += 2;
+                finalProv.push(prov);
+                addedProvs.push(prov);
+              } else if (
+                tags[i] === prov.tags[j].tag_name &&
+                addedProvs.includes(prov)
+              ) {
+                existingProvider.score += 2;
+              }
             }
           }
-        }
-      });
-      return finalProv;
-    }else if (tags.length === 0){
-      finalProv = tagMatchProv
-      return finalProv
+        });
+        return finalProv;
+      } else if (tags.length === 0) {
+        finalProv = tagMatchProv;
+        return finalProv;
+      }
     };
-  }
-    const result = await sortByTag();
-    res.json(result);
+
+    let result = await sortByTag();
+    if (result.length === 0) {
+      result = await sortByCat();
+      res.json(result);
+    } else {
+      res.json(result);
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
