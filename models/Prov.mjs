@@ -40,16 +40,13 @@ const provTagSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function (value) {
-        return /^[a-zA-Z\s_-]+$/.test(value);
+        return /^[a-zA-Z]+$/.test(value);
       },
-      message: "Tag name must contain only letters.",
+      message: "Tag name must contain only letters, and can only be one word.",
     },
   },
   tag_stem: {
     type: String,
-  },
-  tag_words: {
-    type: [String],
   },
 });
 

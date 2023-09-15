@@ -53,12 +53,10 @@ const handleErrors = (err) => {
 
 const getStem = async (array) => {
   const tagWords = array.tag_name.split(" ");
-  let listWords = [];
 
   const stemmedWords = await Promise.all(
     tagWords.map((word) => {
       const stemmedWord = stemmer.stem(word);
-      listWords.push(stemmedWord);
       return stemmedWord;
     })
   );
@@ -66,7 +64,6 @@ const getStem = async (array) => {
   const newArray = {
     tag_name: array.tag_name,
     tag_stem: stemmedWords.join(" "),
-    tag_words: listWords,
   };
 
   return newArray;
@@ -162,26 +159,20 @@ router.post(
 
     //get the stemmed version of the tag
     let newlyCreatedTag = req.body.tags;
-    console.log(newlyCreatedTag);
     let stemmedTags = [];
 
     for (const element of newlyCreatedTag) {
-      console.log(element);
       let tempTag = {};
+      console.log("tag in question", element);
       tempTag.tag_name = element; // Access the tag name within each object
+      console.log("temptag", tempTag);
       const tagObject = await getStem(tempTag);
-      console.log("tag object");
-      console.log(tagObject);
+
+      console.log("tagObject", tagObject);
       stemmedTags.push(tagObject);
-      console.log(stemmedTags);
     }
 
-    console.log("final stemmed tags");
-    console.log(stemmedTags);
-
     newProv.tags = stemmedTags;
-
-    console.log(newProv);
 
     //save profile
     try {
@@ -262,12 +253,16 @@ router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
   try {
     //checking db for prov ID
     const provider = await Prov.findById(authProvId);
-    const providerUserId = provider.user_id; //Stringifying the user ID in the provider object
+    const providerUserId = provider.user_id;
+
     //matching the IDs from the token with the ID in the provider object
+    console.log("provideruserID", providerUserId);
     if (providerUserId == authId) {
-      let newlyCreatedTag = req.body;
-      let tagToBeAdded = await getStem(newlyCreatedTag.tag_name);
-      newlyCreatedTag.tag_stem = tagToBeAdded;
+      //we create the object of the tag
+      let tempTag = {};
+      tempTag = req.body;
+      console.log(tempTag);
+      let tagToBeAdded = await getStem(tempTag);
 
       try {
         //check if the user doesn't have more than 20 tags already
@@ -289,8 +284,8 @@ router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
             return res.status(400).send("This user already has a similar tag");
           } else {
             const newTag = {
-              tag_name: newlyCreatedTag.tag_name,
-              tag_stem: newlyCreatedTag.tag_stem,
+              tag_name: tagToBeAdded.tag_name,
+              tag_stem: tagToBeAdded.tag_stem,
             };
             provider.tags.push(newTag);
             await provider.save();
