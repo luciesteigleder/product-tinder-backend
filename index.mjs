@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import cors from "cors"
 import catRouter from "./routes/catRouter.mjs";
 import userRouter from "./routes/userRouter.mjs";
 import shopRouter from "./routes/shopRouter.mjs";
@@ -15,6 +16,8 @@ import tagRouter from "./routes/tagRouter.mjs";
 import db from "./db.mjs";
 const app = express();
 const PORT = process.env.PORT || 3050;
+
+app.use(cors())
 
 app.use("/static", express.static("public"));
 app.use("/api/categories", catRouter);

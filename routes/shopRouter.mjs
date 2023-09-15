@@ -237,9 +237,11 @@ router.get("/search", authChecker, async (req, res) => {
 
     //Searching for tag matches and attributing them a score to sort out results
     const sortByTag = async () => {
-      const finalProv = [];
+      let finalProv = [];
       const addedProvs = [];
       const tagMatchProv = await sortByCat();
+      console.log(tags)
+      if (tags.length > 0){
       tagMatchProv.forEach((prov) => {
         for (let j = 0; j < prov.tags.length; j++) {
           for (let i = 0; i < tags.length; i++) {
@@ -263,7 +265,11 @@ router.get("/search", authChecker, async (req, res) => {
         }
       });
       return finalProv;
+    }else if (tags.length === 0){
+      finalProv = tagMatchProv
+      return finalProv
     };
+  }
     const result = await sortByTag();
     res.json(result);
   } catch (err) {
