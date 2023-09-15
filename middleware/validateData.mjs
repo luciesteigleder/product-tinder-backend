@@ -1,4 +1,5 @@
 import { body, validationResult } from "express-validator";
+import validator from "validator";
 import multer from "multer";
 
 // Multer configuration
@@ -49,7 +50,22 @@ const validateProvData = [
     .notEmpty()
     .withMessage("Language is required")
     .escape(),
-  body("tags").isArray({ min: 1 }).withMessage("At least one tag is required"),
+  body("tags")
+    .isArray({ min: 1 })
+    .withMessage("At least one tag is required")
+    .custom((tags) => {
+      tags.forEach((tag) => {
+        if (typeof tag !== "string" || !tag.trim() || !validator.isAscii(tag)) {
+          throw new Error("Invalid tag format");
+        }
+      });
+      return true;
+    })
+    .customSanitizer((tags) => {
+      return tags.map((tag) => {
+        return validator.escape(tag);
+      });
+    }),
   body("categories")
     .isArray({ min: 1 })
     .withMessage("At least one category is required"),
