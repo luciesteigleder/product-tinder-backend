@@ -2,7 +2,7 @@
 
 import express from "express";
 import { Tag } from "../models/Tag.mjs";
-import { Prov, getCoordinates } from "../models/Prov.mjs";
+import { Prov } from "../models/Prov.mjs";
 
 import authChecker from "../middleware/authChecker.mjs";
 import natural from "natural";
@@ -19,9 +19,17 @@ const getStem = async (string) => {
   const stemmedWords = await Promise.all(
     tagWords.map((word) => stemmer.stem(word))
   );
-  const newString = { ...string, tag_stem: stemmedWords.join(" ") };
+  const newString = {
+    ...string,
+    tag_stem: stemmedWords.join(" "),
+    tag_words: tagWords.reduce((acc, word, index) => {
+      acc[`word${index + 1}`] = stemmedWords[index];
+      return acc;
+    }, {}),
+  };
   return newString;
 };
+
 //get tags by id
 router.get("/", async (req, res) => {
   try {
