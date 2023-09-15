@@ -39,18 +39,6 @@ const handleErrors = (err) => {
 };
 
 //get the stem of each words
-// const getStem = async (string) => {
-//   const tagWords = string.split(" ");
-//   const stemmedWords = await Promise.all(
-//     tagWords.map((word) => stemmer.stem(word))
-//   );
-//   const result = {
-//     tag_name: string,
-//     tag_stem: stemmedWords.join(" "),
-//   };
-//   return result;
-// };
-
 const getStem = async (array) => {
   const tagWords = array.tag_name.split(" ");
 
@@ -256,12 +244,10 @@ router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
     const providerUserId = provider.user_id;
 
     //matching the IDs from the token with the ID in the provider object
-    console.log("provideruserID", providerUserId);
     if (providerUserId == authId) {
       //we create the object of the tag
       let tempTag = {};
       tempTag = req.body;
-      console.log(tempTag);
       let tagToBeAdded = await getStem(tempTag);
 
       try {
@@ -279,7 +265,6 @@ router.put("/newTag", validateDataForPut, authChecker, async (req, res) => {
               break;
             }
           }
-          console.log(hasSimilarTag);
           if (hasSimilarTag) {
             return res.status(400).send("This user already has a similar tag");
           } else {
@@ -318,21 +303,15 @@ router.put("/deleteTag", authChecker, async (req, res) => {
   try {
     // checking db for prov ID
     const provider = await Prov.findById(authProvId);
-    console.log("provider");
-    console.log(provider);
+
     const providerUserId = provider.user_id;
     // matching the IDs from the token with the ID in the provider object
     if (providerUserId == authId) {
       // check if the provider has this tag
       let tagToBeDeleted;
-      console.log("prov.tags");
-      console.log(provider.tags);
-
       provider.tags.forEach((tag) => {
         if (tag._id.toString() === req.query.tag_id) {
           tagToBeDeleted = tag;
-          console.log("tagToBeDeleted");
-          console.log(tagToBeDeleted);
         }
       });
 
