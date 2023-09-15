@@ -2,8 +2,11 @@
 
 import express from "express";
 import { Tag } from "../models/Tag.mjs";
+import { Prov } from "../models/Prov.mjs";
+
 import authChecker from "../middleware/authChecker.mjs";
 import natural from "natural";
+//import { toSafeInteger } from "lodash";
 
 const router = express.Router();
 router.use(express.json());
@@ -16,9 +19,15 @@ const getStem = async (string) => {
   const stemmedWords = await Promise.all(
     tagWords.map((word) => stemmer.stem(word))
   );
-  string.tag_stem = stemmedWords.join(" ");
-  console.log(string);
-  return string;
+  const newString = {
+    ...string,
+    tag_stem: stemmedWords.join(" "),
+    tag_words: tagWords.reduce((acc, word, index) => {
+      acc[`word${index + 1}`] = stemmedWords[index];
+      return acc;
+    }, {}),
+  };
+  return newString;
 };
 
 //get tags by id
@@ -37,22 +46,64 @@ router.get("/", async (req, res) => {
 
 //get a list of similar tags (only provs)
 router.get("/tag", async (req, res) => {
-  let searchStem = req.query.tag_stem;
+  let tagNameToSearch = {};
+  tagNameToSearch.tag_name = req.query.tag_name;
+  let searchTag = await getStem(tagNameToSearch);
   try {
-    const exactTag = await Tag.find({
-      tag_stem: searchStem,
-      prov_id: { $ne: null },
+    let providersWithPartialMatch = [];
+
+    const allProvidersWithTags = await Prov.find({
+      _id: { $ne: null },
+      tags: { $exists: true, $ne: [] },
     });
-    const partialTag = await Tag.find({
-      tag_stem: { $regex: searchStem, $options: "i" },
+    allProvidersWithTags.forEach((prov) => {
+      prov.tags.forEach((tag) => {
+        if (tag.tag_stem === searchTag.tag_stem) {
+          providersWithPartialMatch.push(prov);
+        }
+      });
     });
-    if (exactTag.length === 0 && partialTag.length === 0) {
-      return res.status(404).send("tag not found");
-    }
-    res.json(exactTag + partialTag);
+    console.log("partial match");
+    console.log(providersWithPartialMatch);
+
+    let providersWithExactMatch = [];
+    providersWithPartialMatch.forEach((prov) => {
+      prov.tags.forEach((tag) => {
+        if (tag.tag_name === searchTag.tag_name) {
+          providersWithExactMatch.push(prov);
+        }
+      });
+    });
+    console.log("exact match");
+    console.log(providersWithExactMatch);
+
+    //partial match
+    // const partialTag = await Prov.find({
+    //   tags: searchTag,
+    //   _id: { $ne: null },
+    // });
+
+    // //exact match
+    // const exactTag = await Prov.find({
+    //   "tags.tag_name": searchTag.tag_name,
+    //   _id: { $ne: null },
+    // });
+
+    // if (exactTag.length === 0 && partialTag.length === 0) {
+    //   return res.status(404).send("tag not found");
+    // }
+    // console.log("exact tags");
+    // console.log(exactTag);
+
+    // console.log(exactTag[0].tags);
+    // // console.log(searchTag.tag_stem);
+
+    // console.log("partial tags");
+    // console.log(partialTag);
+    //res.json(exactTag + partialTag);
   } catch (err) {
     console.error(err.message);
-    res.sendStatus(500).send("Server Error");
+    res.status(500).send("Server Error");
   }
 });
 

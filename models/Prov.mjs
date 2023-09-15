@@ -47,9 +47,9 @@ const provTagSchema = new mongoose.Schema({
   },
   tag_stem: {
     type: String,
-    set: function (value) {
-      return String(value.tag_stem); //required: true,
-    },
+  },
+  tag_words: {
+    type: [String],
   },
 });
 

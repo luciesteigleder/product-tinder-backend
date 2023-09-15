@@ -91,10 +91,6 @@ const validateShopData = [
     .notEmpty()
     .withMessage("Language is required")
     .escape(),
-  body("tags").isArray({ min: 1 }).withMessage("At least one tag is required"),
-  body("categories")
-    .isArray({ min: 1 })
-    .withMessage("At least one category is required"),
 ];
 
 const validateDataForPut = [

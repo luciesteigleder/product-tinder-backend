@@ -39,16 +39,37 @@ const handleErrors = (err) => {
 };
 
 //get the stem of each words
-const getStem = async (string) => {
-  const tagWords = string.split(" ");
+// const getStem = async (string) => {
+//   const tagWords = string.split(" ");
+//   const stemmedWords = await Promise.all(
+//     tagWords.map((word) => stemmer.stem(word))
+//   );
+//   const result = {
+//     tag_name: string,
+//     tag_stem: stemmedWords.join(" "),
+//   };
+//   return result;
+// };
+
+const getStem = async (array) => {
+  const tagWords = array.tag_name.split(" ");
+  let listWords = [];
+
   const stemmedWords = await Promise.all(
-    tagWords.map((word) => stemmer.stem(word))
+    tagWords.map((word) => {
+      const stemmedWord = stemmer.stem(word);
+      listWords.push(stemmedWord);
+      return stemmedWord;
+    })
   );
-  const result = {
-    tag_name: string,
+
+  const newArray = {
+    tag_name: array.tag_name,
     tag_stem: stemmedWords.join(" "),
+    tag_words: listWords,
   };
-  return result;
+
+  return newArray;
 };
 
 //____________________________________________ROUTES___________________________________
@@ -135,28 +156,39 @@ router.post(
     const profileExists = await Prov.exists({ user_id: authId });
 
     //get coordinates from address
-    let newProv = req.body;
+    let newProv = { ...req.body };
     const newAddress = req.body.prov_address;
     newProv.geometry = await getCoordinates(newAddress);
 
     //get the stemmed version of the tag
     let newlyCreatedTag = req.body.tags;
+    console.log(newlyCreatedTag);
     let stemmedTags = [];
 
     for (const element of newlyCreatedTag) {
-      // for because forEach does not work well with asynchronous
-      let tagObject = {};
-      tagObject.tag_name = element;
-      tagObject.tag_stem = await getStem(element);
+      console.log(element);
+      let tempTag = {};
+      tempTag.tag_name = element; // Access the tag name within each object
+      const tagObject = await getStem(tempTag);
+      console.log("tag object");
+      console.log(tagObject);
       stemmedTags.push(tagObject);
+      console.log(stemmedTags);
     }
 
+    console.log("final stemmed tags");
+    console.log(stemmedTags);
+
     newProv.tags = stemmedTags;
+
+    console.log(newProv);
 
     //save profile
     try {
       if (!profileExists) {
         const newProvCreated = await Prov.create(newProv);
+        console.log("newProvCreated");
+        console.log(newProvCreated);
         res.status(200).json(newProvCreated);
       } else {
         throw Error("profile exists");
